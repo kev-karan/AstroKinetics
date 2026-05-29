@@ -3,6 +3,7 @@
 
 typedef struct {
     Vector2 position;
+    Vector2 velocity;
     float rotation;
     float size;
     Color color;
@@ -17,6 +18,7 @@ int main(void)
 
     Player ship = { 0 };
     ship.position = (Vector2) { screenWidth / 2.0f, screenHeight / 2.0f };
+    ship.velocity = (Vector2) { 0, 0 };
     ship.rotation = 0.0f;
     ship.size = 20.0f;
     ship.color = RAYWHITE;
@@ -24,6 +26,21 @@ int main(void)
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
+        if (IsKeyDown(KEY_RIGHT))
+            ship.rotation += 5.0f;
+        if (IsKeyDown(KEY_LEFT))
+            ship.rotation -= 5.0f;
+
+        if (IsKeyDown(KEY_UP)) {
+            float rotationInRadians = (ship.rotation - 90) * DEG2RAD;
+
+            ship.velocity.x += cosf(rotationInRadians) * 0.15f;
+            ship.velocity.y += sinf(rotationInRadians) * 0.15f;
+        }
+
+        ship.position.x += ship.velocity.x;
+        ship.position.y += ship.velocity.y;
+
         BeginDrawing();
         ClearBackground(BLACK);
 
