@@ -38,6 +38,17 @@ int main(void)
             ship.velocity.y += sinf(rotationInRadians) * 0.15f;
         }
 
+        ship.velocity.x *= 0.99f;
+        ship.velocity.y *= 0.99f;
+
+        float maxSpeed = 6.0f;
+        float currentSpeed = sqrtf(ship.velocity.x * ship.velocity.x + ship.velocity.y * ship.velocity.y);
+
+        if (currentSpeed > maxSpeed) {
+            ship.velocity.x = (ship.velocity.x / currentSpeed) * maxSpeed;
+            ship.velocity.y = (ship.velocity.y / currentSpeed) * maxSpeed;
+        }
+
         ship.position.x += ship.velocity.x;
         ship.position.y += ship.velocity.y;
 
