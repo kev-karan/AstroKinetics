@@ -41,6 +41,15 @@ int main(void)
         ship.position.x += ship.velocity.x;
         ship.position.y += ship.velocity.y;
 
+        if (ship.position.x > screenWidth + ship.size)
+            ship.position.x = -ship.size;
+        else if (ship.position.x < -ship.size)
+            ship.position.x = screenWidth + ship.size;
+        if (ship.position.y > screenHeight + ship.size)
+            ship.position.y = -ship.size;
+        else if (ship.position.y < -ship.size)
+            ship.position.y = screenHeight + ship.size;
+
         BeginDrawing();
         ClearBackground(BLACK);
 
