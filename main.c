@@ -157,6 +157,11 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* sco
     for (int i = 0; i < initialAsteroids; i++) {
         asteroids[i].active = true;
         asteroids[i].radius = 40.0f;
+
+        for (int v = 0; v < ASTEROID_VERTICES; v++) {
+            asteroids[i].vertexOffsets[v] = GetRandomValue(80, 120) / 100.0f;
+        }
+
         do {
             asteroids[i].position.x = GetRandomValue(0, screenWidth);
             asteroids[i].position.y = GetRandomValue(0, screenHeight);
@@ -273,6 +278,11 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                                 asteroids[j].position.y = asteroids[i].position.y + offset;
 
                                 asteroids[j].radius = newRadius;
+
+                                for (int v = 0; v < ASTEROID_VERTICES; v++) {
+                                    asteroids[j].vertexOffsets[v] = GetRandomValue(80, 120) / 100.0f;
+                                }
+
                                 asteroids[j].velocity.x = GetRandomValue(-300, 300) / 100.0f;
                                 asteroids[j].velocity.y = GetRandomValue(-300, 300) / 100.0f;
                                 spawned++;
@@ -379,7 +389,18 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score,
 
     for (int i = 0; i < MAX_ASTEROIDS; i++) {
         if (asteroids[i].active) {
-            DrawCircleLines(asteroids[i].position.x, asteroids[i].position.y, asteroids[i].radius, RAYWHITE);
+            for (int j = 0; j < ASTEROID_VERTICES; j++) {
+                float angle1 = (j * 360.0f / ASTEROID_VERTICES) * DEG2RAD;
+                float angle2 = (((j + 1) % ASTEROID_VERTICES) * 360.0f / ASTEROID_VERTICES) * DEG2RAD;
+
+                float r1 = asteroids[i].radius * asteroids[i].vertexOffsets[j];
+                float r2 = asteroids[i].radius * asteroids[i].vertexOffsets[(j + 1) % ASTEROID_VERTICES];
+
+                Vector2 p1 = { asteroids[i].position.x + cosf(angle1) * r1, asteroids[i].position.y + sinf(angle1) * r1 };
+                Vector2 p2 = { asteroids[i].position.x + cosf(angle2) * r2, asteroids[i].position.y + sinf(angle2) * r2 };
+
+                DrawLineV(p1, p2, RAYWHITE);
+            }
         }
     }
 
