@@ -24,6 +24,8 @@ typedef struct {
     float rotation;
     float size;
     Color color;
+    int lives;
+    float invulnerableTimer;
 } Player;
 
 typedef struct Bullet {
