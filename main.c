@@ -1,5 +1,6 @@
 #include "raylib.h"
 #include <math.h>
+#include <stdlib.h>
 
 typedef struct {
     Vector2 position;
@@ -8,6 +9,12 @@ typedef struct {
     float size;
     Color color;
 } Player;
+
+typedef struct Bullet {
+    Vector2 position;
+    Vector2 velocity;
+    struct Bullet* next;
+} Bullet;
 
 const int screenWidth = 800;
 const int screenHeight = 600;
@@ -22,6 +29,8 @@ int main(void)
     ship.rotation = 0.0f;
     ship.size = 20.0f;
     ship.color = RAYWHITE;
+
+    Bullet* bulletsHead = NULL;
 
     SetTargetFPS(60);
 
@@ -61,10 +70,56 @@ int main(void)
         else if (ship.position.y < -ship.size)
             ship.position.y = screenHeight + ship.size;
 
+        float baseAngle = ship.rotation - 90.0f;
+
+        if (IsKeyPressed(KEY_SPACE)) {
+            Bullet* newBullet = (Bullet*)malloc(sizeof(Bullet));
+
+            newBullet->position.x = ship.position.x + cosf(baseAngle * DEG2RAD) * ship.size;
+            newBullet->position.y = ship.position.y + sinf(baseAngle * DEG2RAD) * ship.size;
+
+            float bulletSpeed = 10.0f;
+            newBullet->velocity.x = cosf(baseAngle * DEG2RAD) * bulletSpeed;
+            newBullet->velocity.y = sinf(baseAngle * DEG2RAD) * bulletSpeed;
+
+            newBullet->next = bulletsHead;
+            bulletsHead = newBullet;
+        }
+
+        Bullet* currentBullet = bulletsHead;
+        Bullet* previousBullet = NULL;
+
+        while (currentBullet != NULL) {
+            currentBullet->position.x += currentBullet->velocity.x;
+            currentBullet->position.y += currentBullet->velocity.y;
+
+            if (currentBullet->position.x < 0 || currentBullet->position.x > screenWidth || currentBullet->position.y < 0 || currentBullet->position.y > screenHeight) {
+
+                Bullet* toDelete = currentBullet;
+
+                if (previousBullet == NULL) {
+                    bulletsHead = currentBullet->next;
+                    currentBullet = bulletsHead;
+                } else {
+                    previousBullet->next = currentBullet->next;
+                    currentBullet = previousBullet->next;
+                }
+
+                free(toDelete);
+            } else {
+                previousBullet = currentBullet;
+                currentBullet = currentBullet->next;
+            }
+        }
+
         BeginDrawing();
         ClearBackground(BLACK);
 
-        float baseAngle = ship.rotation - 90.0f;
+        currentBullet = bulletsHead;
+        while (currentBullet != NULL) {
+            DrawCircleV(currentBullet->position, 2.0f, WHITE);
+            currentBullet = currentBullet->next;
+        }
 
         Vector2 p1 = {
             ship.position.x + cosf(baseAngle * DEG2RAD) * ship.size,
@@ -84,6 +139,12 @@ int main(void)
         DrawTriangleLines(p1, p2, p3, ship.color);
 
         EndDrawing();
+    }
+    Bullet* currentBullet = bulletsHead;
+    while (currentBullet != NULL) {
+        Bullet* nextBullet = currentBullet->next;
+        free(currentBullet);
+        currentBullet = nextBullet;
     }
 
     CloseWindow();
