@@ -31,6 +31,7 @@ int main(void)
     ship.color = RAYWHITE;
 
     Bullet* bulletsHead = NULL;
+    float shootCooldown = 0.0f;
 
     SetTargetFPS(60);
 
@@ -72,7 +73,11 @@ int main(void)
 
         float baseAngle = ship.rotation - 90.0f;
 
-        if (IsKeyPressed(KEY_SPACE)) {
+        if (shootCooldown > 0.0f)
+            shootCooldown -= GetFrameTime();
+
+        if (IsKeyDown(KEY_SPACE) && shootCooldown <= 0.0f) {
+
             Bullet* newBullet = (Bullet*)malloc(sizeof(Bullet));
 
             newBullet->position.x = ship.position.x + cosf(baseAngle * DEG2RAD) * ship.size;
@@ -84,6 +89,7 @@ int main(void)
 
             newBullet->next = bulletsHead;
             bulletsHead = newBullet;
+            shootCooldown = 0.2f;
         }
 
         Bullet* currentBullet = bulletsHead;
