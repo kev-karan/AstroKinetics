@@ -50,9 +50,10 @@ void UpdatePlayer(Player* ship);
 void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, int* score);
 void UpdateAsteroids(Asteroid* asteroids);
 void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead);
 
 // --- graphics.c ---
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
 
 // --- utils.c ---
 void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
