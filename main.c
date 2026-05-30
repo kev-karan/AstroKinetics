@@ -26,6 +26,10 @@ typedef struct {
     bool active;
 } Asteroid;
 
+typedef enum GameScreen { MENU,
+    GAMEPLAY,
+    ENDING } GameScreen;
+
 #define MAX_ASTEROIDS 40
 
 const int screenWidth = 800;
@@ -34,8 +38,8 @@ const int screenHeight = 600;
 void UpdatePlayer(Player* ship);
 void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, int* score);
 void UpdateAsteroids(Asteroid* asteroids);
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, bool gameOver);
-void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score, bool* gameOver);
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, GameScreen currentScreen);
+void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score);
 int LoadHighScore(void);
 void SaveHighScore(int score);
 
@@ -49,17 +53,26 @@ int main(void)
 
     int score = 0;
     int highScore = LoadHighScore();
-    bool gameOver = false;
     float shootCooldown = 0.0f;
 
-    ResetGame(&ship, &bulletsHead, asteroids, &score, &gameOver);
+    GameScreen currentScreen = MENU;
+
+    ResetGame(&ship, &bulletsHead, asteroids, &score);
 
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
         UpdateAsteroids(asteroids);
 
-        if (!gameOver) {
+        switch (currentScreen) {
+        case MENU:
+            if (IsKeyPressed(KEY_ENTER)) {
+                ResetGame(&ship, &bulletsHead, asteroids, &score);
+                currentScreen = GAMEPLAY;
+            }
+            break;
+
+        case GAMEPLAY:
             UpdatePlayer(&ship);
             UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, &score);
 
@@ -67,7 +80,7 @@ int main(void)
                 if (asteroids[i].active) {
                     if (CheckCollisionCircles(ship.position, ship.size * 0.6f, asteroids[i].position, asteroids[i].radius)) {
 
-                        gameOver = true;
+                        currentScreen = ENDING;
 
                         if (score > highScore) {
                             highScore = score;
@@ -76,13 +89,16 @@ int main(void)
                     }
                 }
             }
-        } else {
+            break;
+
+        case ENDING:
             if (IsKeyPressed(KEY_ENTER)) {
-                ResetGame(&ship, &bulletsHead, asteroids, &score, &gameOver);
+                currentScreen = MENU;
             }
+            break;
         }
 
-        DrawGame(&ship, bulletsHead, asteroids, score, highScore, gameOver);
+        DrawGame(&ship, bulletsHead, asteroids, score, highScore, currentScreen);
     }
 
     Bullet* currentBullet = bulletsHead;
@@ -116,7 +132,7 @@ void SaveHighScore(int score)
     }
 }
 
-void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score, bool* gameOver)
+void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score)
 {
     ship->position = (Vector2) { screenWidth / 2.0f, screenHeight / 2.0f };
     ship->velocity = (Vector2) { 0, 0 };
@@ -149,7 +165,6 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* sco
     }
 
     *score = 0;
-    *gameOver = false;
 }
 
 void UpdatePlayer(Player* ship)
@@ -192,7 +207,6 @@ void UpdatePlayer(Player* ship)
 
 void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, int* score)
 {
-
     float baseAngle = ship->rotation - 90.0f;
 
     if (*shootCooldown > 0.0f)
@@ -269,7 +283,6 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
 
         if (currentBullet->lifeTime <= 0.0f) {
             Bullet* toDelete = currentBullet;
-
             if (previousBullet == NULL) {
                 *bulletsHead = currentBullet->next;
                 currentBullet = *bulletsHead;
@@ -277,7 +290,6 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                 previousBullet->next = currentBullet->next;
                 currentBullet = previousBullet->next;
             }
-
             free(toDelete);
         } else {
             previousBullet = currentBullet;
@@ -306,24 +318,10 @@ void UpdateAsteroids(Asteroid* asteroids)
     }
 }
 
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, bool gameOver)
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, GameScreen currentScreen)
 {
     BeginDrawing();
     ClearBackground(BLACK);
-
-    Bullet* currentBullet = bulletsHead;
-    while (currentBullet != NULL) {
-        DrawCircleV(currentBullet->position, 2.0f, WHITE);
-        currentBullet = currentBullet->next;
-    }
-
-    if (!gameOver) {
-        float baseAngle = ship->rotation - 90.0f;
-        Vector2 p1 = { ship->position.x + cosf(baseAngle * DEG2RAD) * ship->size, ship->position.y + sinf(baseAngle * DEG2RAD) * ship->size };
-        Vector2 p2 = { ship->position.x + cosf((baseAngle + 140.0f) * DEG2RAD) * ship->size, ship->position.y + sinf((baseAngle + 140.0f) * DEG2RAD) * ship->size };
-        Vector2 p3 = { ship->position.x + cosf((baseAngle - 140.0f) * DEG2RAD) * ship->size, ship->position.y + sinf((baseAngle - 140.0f) * DEG2RAD) * ship->size };
-        DrawTriangleLines(p1, p2, p3, ship->color);
-    }
 
     for (int i = 0; i < MAX_ASTEROIDS; i++) {
         if (asteroids[i].active) {
@@ -331,15 +329,47 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score,
         }
     }
 
-    DrawText(TextFormat("SCORE: %05i", score), 20, 20, 30, RAYWHITE);
-    DrawText(TextFormat("HI-SCORE: %05i", highScore), 20, 60, 20, GRAY);
+    if (currentScreen != MENU) {
+        Bullet* currentBullet = bulletsHead;
+        while (currentBullet != NULL) {
+            DrawCircleV(currentBullet->position, 2.0f, WHITE);
+            currentBullet = currentBullet->next;
+        }
+    }
 
-    if (gameOver) {
+    switch (currentScreen) {
+    case MENU: {
+        int titleWidth = MeasureText("AstroKinetics", 60);
+        DrawText("AstroKinetics", (screenWidth / 2) - (titleWidth / 2), screenHeight / 2 - 80, 60, RAYWHITE);
+
+        int startWidth = MeasureText("PRESS ENTER TO START", 20);
+        DrawText("PRESS ENTER TO START", (screenWidth / 2) - (startWidth / 2), screenHeight / 2 + 20, 20, GRAY);
+
+        int hsWidth = MeasureText(TextFormat("HI-SCORE: %05i", highScore), 20);
+        DrawText(TextFormat("HI-SCORE: %05i", highScore), (screenWidth / 2) - (hsWidth / 2), screenHeight / 2 + 80, 20, DARKGRAY);
+    } break;
+
+    case GAMEPLAY: {
+        float baseAngle = ship->rotation - 90.0f;
+        Vector2 p1 = { ship->position.x + cosf(baseAngle * DEG2RAD) * ship->size, ship->position.y + sinf(baseAngle * DEG2RAD) * ship->size };
+        Vector2 p2 = { ship->position.x + cosf((baseAngle + 140.0f) * DEG2RAD) * ship->size, ship->position.y + sinf((baseAngle + 140.0f) * DEG2RAD) * ship->size };
+        Vector2 p3 = { ship->position.x + cosf((baseAngle - 140.0f) * DEG2RAD) * ship->size, ship->position.y + sinf((baseAngle - 140.0f) * DEG2RAD) * ship->size };
+        DrawTriangleLines(p1, p2, p3, ship->color);
+
+        DrawText(TextFormat("SCORE: %05i", score), 20, 20, 30, RAYWHITE);
+        DrawText(TextFormat("HI-SCORE: %05i", highScore), 20, 60, 20, GRAY);
+    } break;
+
+    case ENDING: {
+        DrawText(TextFormat("SCORE: %05i", score), 20, 20, 30, RAYWHITE);
+        DrawText(TextFormat("HI-SCORE: %05i", highScore), 20, 60, 20, GRAY);
+
         int gameOverWidth = MeasureText("GAME OVER", 60);
         DrawText("GAME OVER", (screenWidth / 2) - (gameOverWidth / 2), screenHeight / 2 - 50, 60, RED);
 
-        int restartWidth = MeasureText("PRESS ENTER TO RESTART", 20);
-        DrawText("PRESS ENTER TO RESTART", (screenWidth / 2) - (restartWidth / 2), screenHeight / 2 + 30, 20, GRAY);
+        int restartWidth = MeasureText("PRESS ENTER TO RETURN TO MENU", 20);
+        DrawText("PRESS ENTER TO RETURN TO MENU", (screenWidth / 2) - (restartWidth / 2), screenHeight / 2 + 30, 20, GRAY);
+    } break;
     }
 
     EndDrawing();
