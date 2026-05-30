@@ -43,6 +43,19 @@ void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead, Asteroid* aster
     if (!ufo->active)
         return;
 
+    if (!isGameOver) {
+        if (ship->position.y > ufo->position.y) {
+            ufo->velocity.y += 0.03f;
+        } else {
+            ufo->velocity.y -= 0.03f;
+        }
+
+        if (ufo->velocity.y > 1.5f)
+            ufo->velocity.y = 1.5f;
+        if (ufo->velocity.y < -1.5f)
+            ufo->velocity.y = -1.5f;
+    }
+
     ufo->position.x += ufo->velocity.x;
     ufo->position.y += ufo->velocity.y;
 
