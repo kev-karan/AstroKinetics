@@ -38,7 +38,7 @@ int main(void)
         case GAMEPLAY:
             UpdatePlayer(&ship);
             UpdateEnemy(&ufo, &ship, &bulletsHead, asteroids, false);
-            UpdateBoss(&boss, &ship, &bulletsHead, false); // Move o Boss
+            UpdateBoss(&boss, &ship, &bulletsHead, false);
             UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, &ufo, &boss, &score, false);
 
             CheckLevelClear(asteroids, &level, &ship, &bulletsHead, &ufo, &boss);
@@ -77,8 +77,6 @@ int main(void)
                     cbToFree = next;
                 }
                 bulletsHead = NULL;
-
-                ufo.active = false;
 
                 if (score > highScore) {
                     highScore = score;

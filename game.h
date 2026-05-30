@@ -58,6 +58,7 @@ typedef struct {
     float shootTimer;
     int health;
     int maxHealth;
+    float introTimer;
 } Boss;
 
 typedef enum GameScreen { MENU,

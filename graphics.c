@@ -81,10 +81,15 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
         DrawText(TextFormat("SCORE: %05i", score), 20, 20, 30, RAYWHITE);
         DrawText(TextFormat("HI-SCORE: %05i", highScore), 20, 60, 20, GRAY);
 
-        if (boss->active) {
-            DrawText("WARNING: BOSS BATTLE", screenWidth / 2 - 100, 20, 20, RED);
-        } else {
-            DrawText(TextFormat("WAVE %i", level), screenWidth / 2 - 40, 20, 20, RAYWHITE);
+        DrawText(TextFormat("WAVE %i", level), screenWidth / 2 - 40, 20, 20, RAYWHITE);
+
+        if (boss->introTimer > 0.0f) {
+            int warningWidth = MeasureText("WARNING: BOSS BATTLE", 40);
+            DrawText("WARNING: BOSS BATTLE", screenWidth / 2 - warningWidth / 2, screenHeight / 2 - 60, 40, RED);
+
+            int secondsLeft = (int)ceilf(boss->introTimer);
+            int countWidth = MeasureText(TextFormat("%i", secondsLeft), 50);
+            DrawText(TextFormat("%i", secondsLeft), screenWidth / 2 - countWidth / 2, screenHeight / 2 + 10, 50, RAYWHITE);
         }
     } break;
 
