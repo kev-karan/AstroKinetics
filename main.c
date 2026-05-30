@@ -12,10 +12,11 @@ int main(void)
     int score = 0;
     int highScore = LoadHighScore();
     float shootCooldown = 0.0f;
+    int level = 1;
 
     GameScreen currentScreen = MENU;
 
-    ResetGame(&ship, &bulletsHead, asteroids, &score, starfield);
+    ResetGame(&ship, &bulletsHead, asteroids, &score, &level, starfield);
 
     SetTargetFPS(60);
 
@@ -26,7 +27,7 @@ int main(void)
         switch (currentScreen) {
         case MENU:
             if (IsKeyPressed(KEY_ENTER)) {
-                ResetGame(&ship, &bulletsHead, asteroids, &score, starfield);
+                ResetGame(&ship, &bulletsHead, asteroids, &score, &level, starfield);
                 currentScreen = GAMEPLAY;
             }
             break;
@@ -34,6 +35,8 @@ int main(void)
         case GAMEPLAY:
             UpdatePlayer(&ship);
             UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, &score);
+
+            CheckLevelClear(asteroids, &level, &ship, &bulletsHead);
 
             for (int i = 0; i < MAX_ASTEROIDS; i++) {
                 if (asteroids[i].active) {
@@ -54,7 +57,7 @@ int main(void)
             }
             break;
         }
-        DrawGame(&ship, bulletsHead, asteroids, score, highScore, currentScreen, starfield);
+        DrawGame(&ship, bulletsHead, asteroids, score, highScore, level, currentScreen, starfield);
     }
 
     Bullet* currentBullet = bulletsHead;
