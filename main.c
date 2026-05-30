@@ -13,6 +13,7 @@ typedef struct {
 typedef struct Bullet {
     Vector2 position;
     Vector2 velocity;
+    float lifeTime;
     struct Bullet* next;
 } Bullet;
 
@@ -86,6 +87,7 @@ int main(void)
             float bulletSpeed = 10.0f;
             newBullet->velocity.x = cosf(baseAngle * DEG2RAD) * bulletSpeed;
             newBullet->velocity.y = sinf(baseAngle * DEG2RAD) * bulletSpeed;
+            newBullet->lifeTime = 0.9f;
 
             newBullet->next = bulletsHead;
             bulletsHead = newBullet;
@@ -99,7 +101,18 @@ int main(void)
             currentBullet->position.x += currentBullet->velocity.x;
             currentBullet->position.y += currentBullet->velocity.y;
 
-            if (currentBullet->position.x < 0 || currentBullet->position.x > screenWidth || currentBullet->position.y < 0 || currentBullet->position.y > screenHeight) {
+            currentBullet->lifeTime -= GetFrameTime();
+
+            if (currentBullet->position.x > screenWidth)
+                currentBullet->position.x = 0;
+            else if (currentBullet->position.x < 0)
+                currentBullet->position.x = screenWidth;
+            if (currentBullet->position.y > screenHeight)
+                currentBullet->position.y = 0;
+            else if (currentBullet->position.y < 0)
+                currentBullet->position.y = screenHeight;
+
+            if (currentBullet->lifeTime <= 0.0f) {
 
                 Bullet* toDelete = currentBullet;
 
