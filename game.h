@@ -1,0 +1,62 @@
+#ifndef GAME_H
+#define GAME_H
+
+#include "raylib.h"
+#include <math.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+// --- CONSTANTES ---
+#define MAX_ASTEROIDS 40
+#define ASTEROID_VERTICES 10
+#define NUM_LAYERS 3
+#define STARS_PER_LAYER 100
+
+// --- TELA ---
+static const int screenWidth = 800;
+static const int screenHeight = 600;
+
+// --- ESTRUTURAS ---
+typedef struct {
+    Vector2 position;
+    Vector2 velocity;
+    float rotation;
+    float size;
+    Color color;
+} Player;
+
+typedef struct Bullet {
+    Vector2 position;
+    Vector2 velocity;
+    float lifeTime;
+    struct Bullet* next;
+} Bullet;
+
+typedef struct {
+    Vector2 position;
+    Vector2 velocity;
+    float radius;
+    bool active;
+    float vertexOffsets[ASTEROID_VERTICES];
+} Asteroid;
+
+typedef enum GameScreen { MENU,
+    GAMEPLAY,
+    ENDING } GameScreen;
+
+// --- logic.c ---
+void UpdatePlayer(Player* ship);
+void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, int* score);
+void UpdateAsteroids(Asteroid* asteroids);
+void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+
+// --- graphics.c ---
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+
+// --- utils.c ---
+void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+int LoadHighScore(void);
+void SaveHighScore(int score);
+
+#endif
