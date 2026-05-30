@@ -3,7 +3,7 @@ CFLAGS = -Wall -std=c99
 LDFLAGS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
 all:
-	$(CC) main.c -o AstroKinetics $(CFLAGS) $(LDFLAGS)
+	$(CC) main.c -o AstroKinetics.out $(CFLAGS) $(LDFLAGS)
 run: all
 	./AstroKinetics
 clean:
