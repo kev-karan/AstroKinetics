@@ -2,6 +2,10 @@
 
 void UpdatePlayer(Player* ship)
 {
+    if (ship->invulnerableTimer > 0.0f) {
+        ship->invulnerableTimer -= GetFrameTime();
+    }
+
     if (IsKeyDown(KEY_RIGHT))
         ship->rotation += 5.0f;
     if (IsKeyDown(KEY_LEFT))
@@ -420,6 +424,7 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
 
     if (allDestroyed) {
         (*level)++;
+        ship->lives++;
 
         Bullet* currentBullet = *bulletsHead;
         while (currentBullet != NULL) {
