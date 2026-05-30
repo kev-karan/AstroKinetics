@@ -265,7 +265,11 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                         for (int j = 0; j < MAX_ASTEROIDS && spawned < 2; j++) {
                             if (!asteroids[j].active) {
                                 asteroids[j].active = true;
-                                asteroids[j].position = asteroids[i].position;
+
+                                float offset = (spawned == 0) ? -newRadius : newRadius;
+                                asteroids[j].position.x = asteroids[i].position.x + offset;
+                                asteroids[j].position.y = asteroids[i].position.y + offset;
+
                                 asteroids[j].radius = newRadius;
                                 asteroids[j].velocity.x = GetRandomValue(-300, 300) / 100.0f;
                                 asteroids[j].velocity.y = GetRandomValue(-300, 300) / 100.0f;
@@ -300,6 +304,54 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
 
 void UpdateAsteroids(Asteroid* asteroids)
 {
+    for (int i = 0; i < MAX_ASTEROIDS; i++) {
+        if (!asteroids[i].active)
+            continue;
+
+        for (int j = i + 1; j < MAX_ASTEROIDS; j++) {
+            if (!asteroids[j].active)
+                continue;
+
+            float dx = asteroids[i].position.x - asteroids[j].position.x;
+            float dy = asteroids[i].position.y - asteroids[j].position.y;
+            float distance = sqrtf(dx * dx + dy * dy);
+
+            if (distance == 0.0f) {
+                dx = 0.1f;
+                distance = 0.1f;
+            }
+
+            float sumRadii = asteroids[i].radius + asteroids[j].radius;
+            if (distance < sumRadii) {
+                float nx = dx / distance;
+                float ny = dy / distance;
+
+                float overlap = sumRadii - distance;
+                asteroids[i].position.x += nx * (overlap / 2.0f);
+                asteroids[i].position.y += ny * (overlap / 2.0f);
+                asteroids[j].position.x -= nx * (overlap / 2.0f);
+                asteroids[j].position.y -= ny * (overlap / 2.0f);
+
+                float dvx = asteroids[i].velocity.x - asteroids[j].velocity.x;
+                float dvy = asteroids[i].velocity.y - asteroids[j].velocity.y;
+
+                float dotProduct = (dvx * nx) + (dvy * ny);
+
+                if (dotProduct < 0) {
+                    float m1 = asteroids[i].radius;
+                    float m2 = asteroids[j].radius;
+
+                    float impulse = (2.0f * dotProduct) / (m1 + m2);
+
+                    asteroids[i].velocity.x -= impulse * m2 * nx;
+                    asteroids[i].velocity.y -= impulse * m2 * ny;
+                    asteroids[j].velocity.x += impulse * m1 * nx;
+                    asteroids[j].velocity.y += impulse * m1 * ny;
+                }
+            }
+        }
+    }
+
     for (int i = 0; i < MAX_ASTEROIDS; i++) {
         if (asteroids[i].active) {
             asteroids[i].position.x += asteroids[i].velocity.x;
