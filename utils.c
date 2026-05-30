@@ -27,6 +27,8 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* u
     ship->rotation = 0.0f;
     ship->size = 20.0f;
     ship->color = RAYWHITE;
+    ship->lives = 5;
+    ship->invulnerableTimer = 0.0f;
 
     Bullet* currentBullet = *bulletsHead;
     while (currentBullet != NULL) {
