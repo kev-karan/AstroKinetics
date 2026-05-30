@@ -4,6 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MAX_ASTEROIDS 40
+#define ASTEROID_VERTICES 10
+#define NUM_LAYERS 3
+#define STARS_PER_LAYER 100
+
 typedef struct {
     Vector2 position;
     Vector2 velocity;
@@ -24,13 +29,12 @@ typedef struct {
     Vector2 velocity;
     float radius;
     bool active;
+    float vertexOffsets[ASTEROID_VERTICES];
 } Asteroid;
 
 typedef enum GameScreen { MENU,
     GAMEPLAY,
     ENDING } GameScreen;
-
-#define MAX_ASTEROIDS 40
 
 const int screenWidth = 800;
 const int screenHeight = 600;
@@ -38,8 +42,9 @@ const int screenHeight = 600;
 void UpdatePlayer(Player* ship);
 void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, int* score);
 void UpdateAsteroids(Asteroid* asteroids);
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, GameScreen currentScreen);
-void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score);
+void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
 int LoadHighScore(void);
 void SaveHighScore(int score);
 
@@ -50,6 +55,7 @@ int main(void)
     Player ship = { 0 };
     Bullet* bulletsHead = NULL;
     Asteroid asteroids[MAX_ASTEROIDS] = { 0 };
+    Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER] = { 0 };
 
     int score = 0;
     int highScore = LoadHighScore();
@@ -57,17 +63,18 @@ int main(void)
 
     GameScreen currentScreen = MENU;
 
-    ResetGame(&ship, &bulletsHead, asteroids, &score);
+    ResetGame(&ship, &bulletsHead, asteroids, &score, starfield);
 
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
         UpdateAsteroids(asteroids);
+        UpdateStarfield(starfield);
 
         switch (currentScreen) {
         case MENU:
             if (IsKeyPressed(KEY_ENTER)) {
-                ResetGame(&ship, &bulletsHead, asteroids, &score);
+                ResetGame(&ship, &bulletsHead, asteroids, &score, starfield);
                 currentScreen = GAMEPLAY;
             }
             break;
@@ -97,8 +104,7 @@ int main(void)
             }
             break;
         }
-
-        DrawGame(&ship, bulletsHead, asteroids, score, highScore, currentScreen);
+        DrawGame(&ship, bulletsHead, asteroids, score, highScore, currentScreen, starfield);
     }
 
     Bullet* currentBullet = bulletsHead;
@@ -132,7 +138,7 @@ void SaveHighScore(int score)
     }
 }
 
-void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score)
+void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
 {
     ship->position = (Vector2) { screenWidth / 2.0f, screenHeight / 2.0f };
     ship->velocity = (Vector2) { 0, 0 };
@@ -155,6 +161,11 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* sco
     for (int i = 0; i < initialAsteroids; i++) {
         asteroids[i].active = true;
         asteroids[i].radius = 40.0f;
+
+        for (int v = 0; v < ASTEROID_VERTICES; v++) {
+            asteroids[i].vertexOffsets[v] = GetRandomValue(80, 120) / 100.0f;
+        }
+
         do {
             asteroids[i].position.x = GetRandomValue(0, screenWidth);
             asteroids[i].position.y = GetRandomValue(0, screenHeight);
@@ -162,6 +173,12 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* sco
 
         asteroids[i].velocity.x = GetRandomValue(-200, 200) / 100.0f;
         asteroids[i].velocity.y = GetRandomValue(-200, 200) / 100.0f;
+    }
+    for (int i = 0; i < NUM_LAYERS; i++) {
+        for (int j = 0; j < STARS_PER_LAYER; j++) {
+            starfield[i][j].x = GetRandomValue(0, screenWidth);
+            starfield[i][j].y = GetRandomValue(0, screenHeight);
+        }
     }
 
     *score = 0;
@@ -265,8 +282,17 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                         for (int j = 0; j < MAX_ASTEROIDS && spawned < 2; j++) {
                             if (!asteroids[j].active) {
                                 asteroids[j].active = true;
-                                asteroids[j].position = asteroids[i].position;
+
+                                float offset = (spawned == 0) ? -newRadius : newRadius;
+                                asteroids[j].position.x = asteroids[i].position.x + offset;
+                                asteroids[j].position.y = asteroids[i].position.y + offset;
+
                                 asteroids[j].radius = newRadius;
+
+                                for (int v = 0; v < ASTEROID_VERTICES; v++) {
+                                    asteroids[j].vertexOffsets[v] = GetRandomValue(80, 120) / 100.0f;
+                                }
+
                                 asteroids[j].velocity.x = GetRandomValue(-300, 300) / 100.0f;
                                 asteroids[j].velocity.y = GetRandomValue(-300, 300) / 100.0f;
                                 spawned++;
@@ -301,6 +327,54 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
 void UpdateAsteroids(Asteroid* asteroids)
 {
     for (int i = 0; i < MAX_ASTEROIDS; i++) {
+        if (!asteroids[i].active)
+            continue;
+
+        for (int j = i + 1; j < MAX_ASTEROIDS; j++) {
+            if (!asteroids[j].active)
+                continue;
+
+            float dx = asteroids[i].position.x - asteroids[j].position.x;
+            float dy = asteroids[i].position.y - asteroids[j].position.y;
+            float distance = sqrtf(dx * dx + dy * dy);
+
+            if (distance == 0.0f) {
+                dx = 0.1f;
+                distance = 0.1f;
+            }
+
+            float sumRadii = asteroids[i].radius + asteroids[j].radius;
+            if (distance < sumRadii) {
+                float nx = dx / distance;
+                float ny = dy / distance;
+
+                float overlap = sumRadii - distance;
+                asteroids[i].position.x += nx * (overlap / 2.0f);
+                asteroids[i].position.y += ny * (overlap / 2.0f);
+                asteroids[j].position.x -= nx * (overlap / 2.0f);
+                asteroids[j].position.y -= ny * (overlap / 2.0f);
+
+                float dvx = asteroids[i].velocity.x - asteroids[j].velocity.x;
+                float dvy = asteroids[i].velocity.y - asteroids[j].velocity.y;
+
+                float dotProduct = (dvx * nx) + (dvy * ny);
+
+                if (dotProduct < 0) {
+                    float m1 = asteroids[i].radius;
+                    float m2 = asteroids[j].radius;
+
+                    float impulse = (2.0f * dotProduct) / (m1 + m2);
+
+                    asteroids[i].velocity.x -= impulse * m2 * nx;
+                    asteroids[i].velocity.y -= impulse * m2 * ny;
+                    asteroids[j].velocity.x += impulse * m1 * nx;
+                    asteroids[j].velocity.y += impulse * m1 * ny;
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < MAX_ASTEROIDS; i++) {
         if (asteroids[i].active) {
             asteroids[i].position.x += asteroids[i].velocity.x;
             asteroids[i].position.y += asteroids[i].velocity.y;
@@ -318,14 +392,55 @@ void UpdateAsteroids(Asteroid* asteroids)
     }
 }
 
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, GameScreen currentScreen)
+void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
+{
+    for (int i = 0; i < NUM_LAYERS; i++) {
+        float speed = (i + 1) * 0.15f;
+
+        for (int j = 0; j < STARS_PER_LAYER; j++) {
+            starfield[i][j].y += speed;
+
+            if (starfield[i][j].y > screenHeight) {
+                starfield[i][j].y = 0;
+                starfield[i][j].x = GetRandomValue(0, screenWidth);
+            }
+        }
+    }
+}
+
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
 {
     BeginDrawing();
     ClearBackground(BLACK);
 
+    for (int i = 0; i < NUM_LAYERS; i++) {
+        Color starColor;
+        if (i == 0)
+            starColor = DARKGRAY;
+        else if (i == 1)
+            starColor = GRAY;
+        else
+            starColor = LIGHTGRAY;
+
+        for (int j = 0; j < STARS_PER_LAYER; j++) {
+            DrawPixelV(starfield[i][j], starColor);
+        }
+    }
+
     for (int i = 0; i < MAX_ASTEROIDS; i++) {
         if (asteroids[i].active) {
-            DrawCircleLines(asteroids[i].position.x, asteroids[i].position.y, asteroids[i].radius, RAYWHITE);
+            for (int j = 0; j < ASTEROID_VERTICES; j++) {
+                float angle1 = (j * 360.0f / ASTEROID_VERTICES) * DEG2RAD;
+                float angle2 = (((j + 1) % ASTEROID_VERTICES) * 360.0f / ASTEROID_VERTICES) * DEG2RAD;
+
+                float r1 = asteroids[i].radius * asteroids[i].vertexOffsets[j];
+                float r2 = asteroids[i].radius * asteroids[i].vertexOffsets[(j + 1) % ASTEROID_VERTICES];
+
+                Vector2 p1 = { asteroids[i].position.x + cosf(angle1) * r1, asteroids[i].position.y + sinf(angle1) * r1 };
+                Vector2 p2 = { asteroids[i].position.x + cosf(angle2) * r2, asteroids[i].position.y + sinf(angle2) * r2 };
+
+                DrawLineV(p1, p2, RAYWHITE);
+            }
         }
     }
 
