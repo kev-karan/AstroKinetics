@@ -136,8 +136,40 @@ int main(void)
             else if (currentBullet->position.y < 0)
                 currentBullet->position.y = screenHeight;
 
-            if (currentBullet->lifeTime <= 0.0f) {
+            bool bulletHit = false;
+            for (int i = 0; i < MAX_ASTEROIDS; i++) {
+                if (asteroids[i].active) {
+                    if (CheckCollisionCircles(currentBullet->position, 2.0f, asteroids[i].position, asteroids[i].radius)) {
 
+                        bulletHit = true;
+                        asteroids[i].active = false;
+
+                        if (asteroids[i].radius >= 20.0f) {
+                            float newRadius = asteroids[i].radius / 2.0f;
+                            int spawned = 0;
+
+                            for (int j = 0; j < MAX_ASTEROIDS && spawned < 2; j++) {
+                                if (!asteroids[j].active) {
+                                    asteroids[j].active = true;
+                                    asteroids[j].position = asteroids[i].position;
+                                    asteroids[j].radius = newRadius;
+
+                                    asteroids[j].velocity.x = GetRandomValue(-300, 300) / 100.0f;
+                                    asteroids[j].velocity.y = GetRandomValue(-300, 300) / 100.0f;
+                                    spawned++;
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (bulletHit) {
+                currentBullet->lifeTime = 0.0f;
+            }
+
+            if (currentBullet->lifeTime <= 0.0f) {
                 Bullet* toDelete = currentBullet;
 
                 if (previousBullet == NULL) {
