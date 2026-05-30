@@ -1,6 +1,6 @@
 #include "game.h"
 
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -65,6 +65,8 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score,
 
         DrawText(TextFormat("SCORE: %05i", score), 20, 20, 30, RAYWHITE);
         DrawText(TextFormat("HI-SCORE: %05i", highScore), 20, 60, 20, GRAY);
+
+        DrawText(TextFormat("WAVE %i", level), screenWidth / 2 - 40, 20, 20, RAYWHITE);
     } break;
 
     case ENDING: {
