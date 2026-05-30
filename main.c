@@ -36,7 +36,7 @@ int main(void)
 
         case GAMEPLAY:
             UpdatePlayer(&ship);
-            UpdateEnemy(&ufo, &ship, &bulletsHead, false);
+            UpdateEnemy(&ufo, &ship, &bulletsHead, asteroids, false);
             UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, &ufo, &score, false);
 
             CheckLevelClear(asteroids, &level, &ship, &bulletsHead, &ufo);
@@ -71,7 +71,7 @@ int main(void)
             break;
 
         case ENDING:
-            UpdateEnemy(&ufo, &ship, &bulletsHead, true);
+            UpdateEnemy(&ufo, &ship, &bulletsHead, asteroids, true);
             UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, &ufo, &score, true);
 
             if (IsKeyPressed(KEY_ENTER)) {

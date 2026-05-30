@@ -38,7 +38,7 @@ void UpdatePlayer(Player* ship)
         ship->position.y = screenHeight + ship->size;
 }
 
-void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead, bool isGameOver)
+void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead, Asteroid* asteroids, bool isGameOver)
 {
     if (!ufo->active)
         return;
@@ -54,6 +54,18 @@ void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead, bool isGameOver
         ufo->position.y = -ufo->radius;
     else if (ufo->position.y < -ufo->radius)
         ufo->position.y = screenHeight + ufo->radius;
+
+    for (int i = 0; i < MAX_ASTEROIDS; i++) {
+        if (asteroids[i].active) {
+            if (CheckCollisionCircles(ufo->position, ufo->radius, asteroids[i].position, asteroids[i].radius)) {
+                ufo->active = false;
+                break;
+            }
+        }
+    }
+
+    if (!ufo->active)
+        return;
 
     if (!isGameOver) {
         ufo->shootTimer -= GetFrameTime();

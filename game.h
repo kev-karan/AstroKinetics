@@ -57,7 +57,7 @@ typedef enum GameScreen { MENU,
 // --- logic.c ---
 void UpdatePlayer(Player* ship);
 void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufo, int* score, bool isGameOver);
-void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead, bool isGameOver);
+void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead, Asteroid* asteroids, bool isGameOver);
 void UpdateAsteroids(Asteroid* asteroids);
 void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
 void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufo);

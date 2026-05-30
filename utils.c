@@ -67,5 +67,17 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* u
     }
 
     *score = 0;
-    *level = 1;
+
+    // --- MODO DE TESTE ---
+    *level = 3;
+
+    ufo->active = true;
+    ufo->radius = 20.0f;
+    ufo->position.x = 0;
+    ufo->position.y = GetRandomValue(100, screenHeight - 100);
+    ufo->velocity.x = 2.0f;
+    ufo->velocity.y = GetRandomValue(-100, 100) / 100.0f;
+    ufo->shootTimer = 2.0f;
+
+    // --- MODO DE TESTE ---
 }
