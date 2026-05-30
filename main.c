@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MAX_ASTEROIDS 40
+#define ASTEROID_VERTICES 10
+
 typedef struct {
     Vector2 position;
     Vector2 velocity;
@@ -24,13 +27,12 @@ typedef struct {
     Vector2 velocity;
     float radius;
     bool active;
+    float vertexOffsets[ASTEROID_VERTICES];
 } Asteroid;
 
 typedef enum GameScreen { MENU,
     GAMEPLAY,
     ENDING } GameScreen;
-
-#define MAX_ASTEROIDS 40
 
 const int screenWidth = 800;
 const int screenHeight = 600;
