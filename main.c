@@ -1,5 +1,6 @@
 #include "raylib.h"
 #include <math.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 typedef struct {
@@ -17,6 +18,15 @@ typedef struct Bullet {
     struct Bullet* next;
 } Bullet;
 
+typedef struct {
+    Vector2 position;
+    Vector2 velocity;
+    float radius;
+    bool active;
+} Asteroid;
+
+#define MAX_ASTEROIDS 40
+
 const int screenWidth = 800;
 const int screenHeight = 600;
 
@@ -33,6 +43,20 @@ int main(void)
 
     Bullet* bulletsHead = NULL;
     float shootCooldown = 0.0f;
+
+    Asteroid asteroids[MAX_ASTEROIDS] = { 0 };
+    int initialAsteroids = 4;
+
+    for (int i = 0; i < initialAsteroids; i++) {
+        asteroids[i].active = true;
+        asteroids[i].radius = 40.0f;
+
+        asteroids[i].position.x = GetRandomValue(0, screenWidth);
+        asteroids[i].position.y = GetRandomValue(0, screenHeight);
+
+        asteroids[i].velocity.x = GetRandomValue(-200, 200) / 100.0f;
+        asteroids[i].velocity.y = GetRandomValue(-200, 200) / 100.0f;
+    }
 
     SetTargetFPS(60);
 
@@ -131,6 +155,23 @@ int main(void)
             }
         }
 
+        for (int i = 0; i < MAX_ASTEROIDS; i++) {
+            if (asteroids[i].active) {
+                asteroids[i].position.x += asteroids[i].velocity.x;
+                asteroids[i].position.y += asteroids[i].velocity.y;
+
+                if (asteroids[i].position.x > screenWidth + asteroids[i].radius)
+                    asteroids[i].position.x = -asteroids[i].radius;
+                else if (asteroids[i].position.x < -asteroids[i].radius)
+                    asteroids[i].position.x = screenWidth + asteroids[i].radius;
+
+                if (asteroids[i].position.y > screenHeight + asteroids[i].radius)
+                    asteroids[i].position.y = -asteroids[i].radius;
+                else if (asteroids[i].position.y < -asteroids[i].radius)
+                    asteroids[i].position.y = screenHeight + asteroids[i].radius;
+            }
+        }
+
         BeginDrawing();
         ClearBackground(BLACK);
 
@@ -156,6 +197,12 @@ int main(void)
         };
 
         DrawTriangleLines(p1, p2, p3, ship.color);
+
+        for (int i = 0; i < MAX_ASTEROIDS; i++) {
+            if (asteroids[i].active) {
+                DrawCircleLines(asteroids[i].position.x, asteroids[i].position.y, asteroids[i].radius, RAYWHITE);
+            }
+        }
 
         EndDrawing();
     }
