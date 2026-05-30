@@ -38,6 +38,9 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* u
 
     ufo->active = false;
     boss->active = false;
+    boss->introTimer = 0.0f;
+    boss->bounceCount = 0;
+    boss->isCrossing = false;
 
     for (int i = 0; i < MAX_ASTEROIDS; i++)
         asteroids[i].active = false;
@@ -68,8 +71,5 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* u
     }
 
     *score = 0;
-
-    // --- MODO DE TESTE ---
-    *level = 4;
-    // ---------------------
+    *level = 1;
 }
