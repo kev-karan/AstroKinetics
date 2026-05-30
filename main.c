@@ -21,7 +21,7 @@ const int screenHeight = 600;
 
 int main(void)
 {
-    InitWindow(screenWidth, screenHeight, "AstroKinetics - BolaFora");
+    InitWindow(screenWidth, screenHeight, "AstroKinetics");
 
     Player ship = { 0 };
     ship.position = (Vector2) { screenWidth / 2.0f, screenHeight / 2.0f };
