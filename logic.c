@@ -38,7 +38,7 @@ void UpdatePlayer(Player* ship)
         ship->position.y = screenHeight + ship->size;
 }
 
-void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead)
+void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead, bool isGameOver)
 {
     if (!ufo->active)
         return;
@@ -55,38 +55,40 @@ void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead)
     else if (ufo->position.y < -ufo->radius)
         ufo->position.y = screenHeight + ufo->radius;
 
-    ufo->shootTimer -= GetFrameTime();
-    if (ufo->shootTimer <= 0.0f) {
-        float dx = ship->position.x - ufo->position.x;
-        float dy = ship->position.y - ufo->position.y;
-        float distance = sqrtf(dx * dx + dy * dy);
+    if (!isGameOver) {
+        ufo->shootTimer -= GetFrameTime();
+        if (ufo->shootTimer <= 0.0f) {
+            float dx = ship->position.x - ufo->position.x;
+            float dy = ship->position.y - ufo->position.y;
+            float distance = sqrtf(dx * dx + dy * dy);
 
-        if (distance > 0) {
-            Bullet* newBullet = (Bullet*)malloc(sizeof(Bullet));
-            newBullet->position = ufo->position;
+            if (distance > 0) {
+                Bullet* newBullet = (Bullet*)malloc(sizeof(Bullet));
+                newBullet->position = ufo->position;
 
-            float speed = 6.0f;
-            newBullet->velocity.x = (dx / distance) * speed;
-            newBullet->velocity.y = (dy / distance) * speed;
-            newBullet->lifeTime = 1.5f;
-            newBullet->isEnemy = true;
+                float speed = 6.0f;
+                newBullet->velocity.x = (dx / distance) * speed;
+                newBullet->velocity.y = (dy / distance) * speed;
+                newBullet->lifeTime = 1.5f;
+                newBullet->isEnemy = true;
 
-            newBullet->next = *bulletsHead;
-            *bulletsHead = newBullet;
+                newBullet->next = *bulletsHead;
+                *bulletsHead = newBullet;
+            }
+
+            ufo->shootTimer = GetRandomValue(150, 300) / 100.0f;
         }
-
-        ufo->shootTimer = GetRandomValue(150, 300) / 100.0f;
     }
 }
 
-void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufo, int* score)
+void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufo, int* score, bool isGameOver)
 {
     float baseAngle = ship->rotation - 90.0f;
 
     if (*shootCooldown > 0.0f)
         *shootCooldown -= GetFrameTime();
 
-    if (IsKeyDown(KEY_SPACE) && *shootCooldown <= 0.0f) {
+    if (!isGameOver && IsKeyDown(KEY_SPACE) && *shootCooldown <= 0.0f) {
         Bullet* newBullet = (Bullet*)malloc(sizeof(Bullet));
 
         newBullet->position.x = ship->position.x + cosf(baseAngle * DEG2RAD) * ship->size;
@@ -123,7 +125,6 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
         bool bulletHit = false;
 
         if (!currentBullet->isEnemy) {
-
             if (ufo->active && CheckCollisionCircles(currentBullet->position, 2.0f, ufo->position, ufo->radius)) {
                 bulletHit = true;
                 ufo->active = false;

@@ -36,8 +36,9 @@ int main(void)
 
         case GAMEPLAY:
             UpdatePlayer(&ship);
-            UpdateEnemy(&ufo, &ship, &bulletsHead); // Movimenta e atira com o UFO
-            UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, &ufo, &score);
+            UpdateEnemy(&ufo, &ship, &bulletsHead, false);
+            UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, &ufo, &score, false);
+
             CheckLevelClear(asteroids, &level, &ship, &bulletsHead, &ufo);
 
             bool playerHit = false;
@@ -70,7 +71,11 @@ int main(void)
             break;
 
         case ENDING:
+            UpdateEnemy(&ufo, &ship, &bulletsHead, true);
+            UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, &ufo, &score, true);
+
             if (IsKeyPressed(KEY_ENTER)) {
+                ResetGame(&ship, &bulletsHead, asteroids, &ufo, &score, &level, starfield);
                 currentScreen = MENU;
             }
             break;
