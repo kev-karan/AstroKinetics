@@ -6,6 +6,8 @@
 
 #define MAX_ASTEROIDS 40
 #define ASTEROID_VERTICES 10
+#define NUM_LAYERS 3
+#define STARS_PER_LAYER 100
 
 typedef struct {
     Vector2 position;
@@ -40,8 +42,9 @@ const int screenHeight = 600;
 void UpdatePlayer(Player* ship);
 void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, int* score);
 void UpdateAsteroids(Asteroid* asteroids);
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, GameScreen currentScreen);
-void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score);
+void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
 int LoadHighScore(void);
 void SaveHighScore(int score);
 
@@ -52,6 +55,7 @@ int main(void)
     Player ship = { 0 };
     Bullet* bulletsHead = NULL;
     Asteroid asteroids[MAX_ASTEROIDS] = { 0 };
+    Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER] = { 0 };
 
     int score = 0;
     int highScore = LoadHighScore();
@@ -59,17 +63,18 @@ int main(void)
 
     GameScreen currentScreen = MENU;
 
-    ResetGame(&ship, &bulletsHead, asteroids, &score);
+    ResetGame(&ship, &bulletsHead, asteroids, &score, starfield);
 
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
         UpdateAsteroids(asteroids);
+        UpdateStarfield(starfield);
 
         switch (currentScreen) {
         case MENU:
             if (IsKeyPressed(KEY_ENTER)) {
-                ResetGame(&ship, &bulletsHead, asteroids, &score);
+                ResetGame(&ship, &bulletsHead, asteroids, &score, starfield);
                 currentScreen = GAMEPLAY;
             }
             break;
@@ -99,8 +104,7 @@ int main(void)
             }
             break;
         }
-
-        DrawGame(&ship, bulletsHead, asteroids, score, highScore, currentScreen);
+        DrawGame(&ship, bulletsHead, asteroids, score, highScore, currentScreen, starfield);
     }
 
     Bullet* currentBullet = bulletsHead;
@@ -134,7 +138,7 @@ void SaveHighScore(int score)
     }
 }
 
-void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score)
+void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
 {
     ship->position = (Vector2) { screenWidth / 2.0f, screenHeight / 2.0f };
     ship->velocity = (Vector2) { 0, 0 };
@@ -169,6 +173,12 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* sco
 
         asteroids[i].velocity.x = GetRandomValue(-200, 200) / 100.0f;
         asteroids[i].velocity.y = GetRandomValue(-200, 200) / 100.0f;
+    }
+    for (int i = 0; i < NUM_LAYERS; i++) {
+        for (int j = 0; j < STARS_PER_LAYER; j++) {
+            starfield[i][j].x = GetRandomValue(0, screenWidth);
+            starfield[i][j].y = GetRandomValue(0, screenHeight);
+        }
     }
 
     *score = 0;
@@ -382,10 +392,40 @@ void UpdateAsteroids(Asteroid* asteroids)
     }
 }
 
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, GameScreen currentScreen)
+void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
+{
+    for (int i = 0; i < NUM_LAYERS; i++) {
+        float speed = (i + 1) * 0.15f;
+
+        for (int j = 0; j < STARS_PER_LAYER; j++) {
+            starfield[i][j].y += speed;
+
+            if (starfield[i][j].y > screenHeight) {
+                starfield[i][j].y = 0;
+                starfield[i][j].x = GetRandomValue(0, screenWidth);
+            }
+        }
+    }
+}
+
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
 {
     BeginDrawing();
     ClearBackground(BLACK);
+
+    for (int i = 0; i < NUM_LAYERS; i++) {
+        Color starColor;
+        if (i == 0)
+            starColor = DARKGRAY;
+        else if (i == 1)
+            starColor = GRAY;
+        else
+            starColor = LIGHTGRAY;
+
+        for (int j = 0; j < STARS_PER_LAYER; j++) {
+            DrawPixelV(starfield[i][j], starColor);
+        }
+    }
 
     for (int i = 0; i < MAX_ASTEROIDS; i++) {
         if (asteroids[i].active) {
