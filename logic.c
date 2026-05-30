@@ -155,12 +155,16 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                 ufo->active = false;
                 *score += 500;
             }
+        }
 
-            if (!bulletHit) {
-                for (int i = 0; i < MAX_ASTEROIDS; i++) {
-                    if (asteroids[i].active) {
-                        if (CheckCollisionCircles(currentBullet->position, 2.0f, asteroids[i].position, asteroids[i].radius)) {
-                            bulletHit = true;
+        if (!bulletHit) {
+            for (int i = 0; i < MAX_ASTEROIDS; i++) {
+                if (asteroids[i].active) {
+                    if (CheckCollisionCircles(currentBullet->position, 2.0f, asteroids[i].position, asteroids[i].radius)) {
+
+                        bulletHit = true;
+
+                        if (!currentBullet->isEnemy) {
                             asteroids[i].active = false;
 
                             if (asteroids[i].radius >= 40.0f)
@@ -188,8 +192,9 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                                     }
                                 }
                             }
-                            break;
                         }
+
+                        break;
                     }
                 }
             }
