@@ -31,11 +31,47 @@ void UpdatePlayer(Player* ship)
         ship->position.x = -ship->size;
     else if (ship->position.x < -ship->size)
         ship->position.x = screenWidth + ship->size;
-
     if (ship->position.y > screenHeight + ship->size)
         ship->position.y = -ship->size;
     else if (ship->position.y < -ship->size)
         ship->position.y = screenHeight + ship->size;
+}
+
+void UpdateBoss(Boss* boss, Player* ship, Bullet** bulletsHead, bool isGameOver)
+{
+    if (!boss->active)
+        return;
+
+    boss->position.y += boss->velocity.y;
+    if (boss->position.y < boss->radius) {
+        boss->position.y = boss->radius;
+        boss->velocity.y *= -1;
+    } else if (boss->position.y > screenHeight - boss->radius) {
+        boss->position.y = screenHeight - boss->radius;
+        boss->velocity.y *= -1;
+    }
+
+    if (!isGameOver) {
+        boss->shootTimer -= GetFrameTime();
+        if (boss->shootTimer <= 0.0f) {
+
+            for (int i = -1; i <= 1; i++) {
+                Bullet* newBullet = (Bullet*)malloc(sizeof(Bullet));
+                newBullet->position = boss->position;
+
+                float angle = atan2f(ship->position.y - boss->position.y, ship->position.x - boss->position.x) + (i * 0.2f);
+                float speed = 5.0f;
+
+                newBullet->velocity.x = cosf(angle) * speed;
+                newBullet->velocity.y = sinf(angle) * speed;
+                newBullet->lifeTime = 2.0f;
+                newBullet->isEnemy = true;
+                newBullet->next = *bulletsHead;
+                *bulletsHead = newBullet;
+            }
+            boss->shootTimer = 1.5f;
+        }
+    }
 }
 
 void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead, Asteroid* asteroids, bool isGameOver)
@@ -44,11 +80,10 @@ void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead, Asteroid* aster
         return;
 
     if (!isGameOver) {
-        if (ship->position.y > ufo->position.y) {
+        if (ship->position.y > ufo->position.y)
             ufo->velocity.y += 0.03f;
-        } else {
+        else
             ufo->velocity.y -= 0.03f;
-        }
 
         if (ufo->velocity.y > 1.5f)
             ufo->velocity.y = 1.5f;
@@ -90,23 +125,20 @@ void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead, Asteroid* aster
             if (distance > 0) {
                 Bullet* newBullet = (Bullet*)malloc(sizeof(Bullet));
                 newBullet->position = ufo->position;
-
                 float speed = 6.0f;
                 newBullet->velocity.x = (dx / distance) * speed;
                 newBullet->velocity.y = (dy / distance) * speed;
                 newBullet->lifeTime = 1.5f;
                 newBullet->isEnemy = true;
-
                 newBullet->next = *bulletsHead;
                 *bulletsHead = newBullet;
             }
-
             ufo->shootTimer = GetRandomValue(150, 300) / 100.0f;
         }
     }
 }
 
-void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufo, int* score, bool isGameOver)
+void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufo, Boss* boss, int* score, bool isGameOver)
 {
     float baseAngle = ship->rotation - 90.0f;
 
@@ -115,16 +147,13 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
 
     if (!isGameOver && IsKeyDown(KEY_SPACE) && *shootCooldown <= 0.0f) {
         Bullet* newBullet = (Bullet*)malloc(sizeof(Bullet));
-
         newBullet->position.x = ship->position.x + cosf(baseAngle * DEG2RAD) * ship->size;
         newBullet->position.y = ship->position.y + sinf(baseAngle * DEG2RAD) * ship->size;
-
         float bulletSpeed = 10.0f;
         newBullet->velocity.x = cosf(baseAngle * DEG2RAD) * bulletSpeed;
         newBullet->velocity.y = sinf(baseAngle * DEG2RAD) * bulletSpeed;
         newBullet->lifeTime = 0.9f;
         newBullet->isEnemy = false;
-
         newBullet->next = *bulletsHead;
         *bulletsHead = newBullet;
         *shootCooldown = 0.2f;
@@ -150,7 +179,19 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
         bool bulletHit = false;
 
         if (!currentBullet->isEnemy) {
-            if (ufo->active && CheckCollisionCircles(currentBullet->position, 2.0f, ufo->position, ufo->radius)) {
+
+            if (boss->active && CheckCollisionCircles(currentBullet->position, 2.0f, boss->position, boss->radius)) {
+                bulletHit = true;
+                boss->health--;
+                *score += 20;
+
+                if (boss->health <= 0) {
+                    boss->active = false;
+                    *score += 2000;
+                }
+            }
+
+            if (!bulletHit && ufo->active && CheckCollisionCircles(currentBullet->position, 2.0f, ufo->position, ufo->radius)) {
                 bulletHit = true;
                 ufo->active = false;
                 *score += 500;
@@ -161,7 +202,6 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
             for (int i = 0; i < MAX_ASTEROIDS; i++) {
                 if (asteroids[i].active) {
                     if (CheckCollisionCircles(currentBullet->position, 2.0f, asteroids[i].position, asteroids[i].radius)) {
-
                         bulletHit = true;
 
                         if (!currentBullet->isEnemy) {
@@ -193,7 +233,6 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                                 }
                             }
                         }
-
                         break;
                     }
                 }
@@ -279,7 +318,6 @@ void UpdateAsteroids(Asteroid* asteroids)
                 asteroids[i].position.x = -asteroids[i].radius;
             else if (asteroids[i].position.x < -asteroids[i].radius)
                 asteroids[i].position.x = screenWidth + asteroids[i].radius;
-
             if (asteroids[i].position.y > screenHeight + asteroids[i].radius)
                 asteroids[i].position.y = -asteroids[i].radius;
             else if (asteroids[i].position.y < -asteroids[i].radius)
@@ -304,7 +342,7 @@ void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
     }
 }
 
-void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufo)
+void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufo, Boss* boss)
 {
     bool allDestroyed = true;
     for (int i = 0; i < MAX_ASTEROIDS; i++) {
@@ -313,6 +351,9 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
             break;
         }
     }
+
+    if (boss->active)
+        allDestroyed = false;
 
     if (allDestroyed) {
         (*level)++;
@@ -325,7 +366,19 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
         }
         *bulletsHead = NULL;
 
-        if (*level >= 3 && !ufo->active) {
+        if (*level % 5 == 0) {
+            boss->active = true;
+            boss->maxHealth = 15 + (*level * 2);
+            boss->health = boss->maxHealth;
+            boss->radius = 50.0f;
+            boss->position.x = screenWidth - 100;
+            boss->position.y = screenHeight / 2;
+            boss->velocity.x = 0;
+            boss->velocity.y = 3.0f;
+            boss->shootTimer = 1.0f;
+        }
+
+        if (*level >= 3 && !boss->active && !ufo->active) {
             ufo->active = true;
             ufo->radius = 20.0f;
             ufo->position.x = 0;
@@ -339,7 +392,7 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
             ufo->shootTimer = 2.0f;
         }
 
-        int spawnCount = 2 + (*level * 2);
+        int spawnCount = (boss->active) ? 2 : (2 + (*level * 2));
         if (spawnCount > MAX_ASTEROIDS / 2)
             spawnCount = MAX_ASTEROIDS / 2;
 

@@ -20,7 +20,7 @@ void SaveHighScore(int score)
     }
 }
 
-void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* ufo, int* score, int* level, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
+void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* ufo, Boss* boss, int* score, int* level, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
 {
     ship->position = (Vector2) { screenWidth / 2.0f, screenHeight / 2.0f };
     ship->velocity = (Vector2) { 0, 0 };
@@ -37,6 +37,7 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* u
     *bulletsHead = NULL;
 
     ufo->active = false;
+    boss->active = false;
 
     for (int i = 0; i < MAX_ASTEROIDS; i++)
         asteroids[i].active = false;
@@ -69,15 +70,6 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* u
     *score = 0;
 
     // --- MODO DE TESTE ---
-    *level = 3;
-
-    ufo->active = true;
-    ufo->radius = 20.0f;
-    ufo->position.x = 0;
-    ufo->position.y = GetRandomValue(100, screenHeight - 100);
-    ufo->velocity.x = 2.0f;
-    ufo->velocity.y = GetRandomValue(-100, 100) / 100.0f;
-    ufo->shootTimer = 2.0f;
-
-    // --- MODO DE TESTE ---
+    *level = 4;
+    // ---------------------
 }

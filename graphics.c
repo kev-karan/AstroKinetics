@@ -1,6 +1,6 @@
 #include "game.h"
 
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -41,6 +41,15 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
         DrawEllipseLines(ufo->position.x, ufo->position.y - 4, ufo->radius * 0.5f, ufo->radius * 0.4f, RED);
     }
 
+    if (boss->active) {
+        DrawPoly(boss->position, 8, boss->radius, 0, PURPLE);
+        DrawPolyLines(boss->position, 8, boss->radius, 0, MAGENTA);
+
+        float hpPercentage = (float)boss->health / boss->maxHealth;
+        DrawRectangle(boss->position.x - 40, boss->position.y - boss->radius - 20, 80 * hpPercentage, 8, RED);
+        DrawRectangleLines(boss->position.x - 40, boss->position.y - boss->radius - 20, 80, 8, WHITE);
+    }
+
     if (currentScreen != MENU) {
         Bullet* currentBullet = bulletsHead;
         while (currentBullet != NULL) {
@@ -72,7 +81,11 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
         DrawText(TextFormat("SCORE: %05i", score), 20, 20, 30, RAYWHITE);
         DrawText(TextFormat("HI-SCORE: %05i", highScore), 20, 60, 20, GRAY);
 
-        DrawText(TextFormat("WAVE %i", level), screenWidth / 2 - 40, 20, 20, RAYWHITE);
+        if (boss->active) {
+            DrawText("WARNING: BOSS BATTLE", screenWidth / 2 - 100, 20, 20, RED);
+        } else {
+            DrawText(TextFormat("WAVE %i", level), screenWidth / 2 - 40, 20, 20, RAYWHITE);
+        }
     } break;
 
     case ENDING: {
