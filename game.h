@@ -59,6 +59,8 @@ typedef struct {
     int health;
     int maxHealth;
     float introTimer;
+    int bounceCount;
+    bool isCrossing;
 } Boss;
 
 typedef enum GameScreen { MENU,

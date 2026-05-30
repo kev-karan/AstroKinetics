@@ -43,16 +43,48 @@ void UpdateBoss(Boss* boss, Player* ship, Bullet** bulletsHead, bool isGameOver)
     if (!boss->active)
         return;
 
-    boss->position.y += boss->velocity.y;
-    if (boss->position.y < boss->radius) {
-        boss->position.y = boss->radius;
-        boss->velocity.y *= -1;
-    } else if (boss->position.y > screenHeight - boss->radius) {
-        boss->position.y = screenHeight - boss->radius;
-        boss->velocity.y *= -1;
+    if (boss->isCrossing) {
+        boss->position.x += boss->velocity.x;
+
+        if (boss->velocity.x > 0 && boss->position.x >= screenWidth - 100) {
+            boss->position.x = screenWidth - 100;
+            boss->isCrossing = false;
+            boss->bounceCount = 0;
+            boss->velocity.x = 0;
+        } else if (boss->velocity.x < 0 && boss->position.x <= 100) {
+            boss->position.x = 100;
+            boss->isCrossing = false;
+            boss->bounceCount = 0;
+            boss->velocity.x = 0;
+        }
+    } else {
+        boss->position.y += boss->velocity.y;
+        bool bounced = false;
+
+        if (boss->position.y < boss->radius) {
+            boss->position.y = boss->radius;
+            boss->velocity.y *= -1;
+            bounced = true;
+        } else if (boss->position.y > screenHeight - boss->radius) {
+            boss->position.y = screenHeight - boss->radius;
+            boss->velocity.y *= -1;
+            bounced = true;
+        }
+
+        if (bounced) {
+            boss->bounceCount++;
+            if (boss->bounceCount >= 5) {
+                boss->isCrossing = true;
+                if (boss->position.x > screenWidth / 2.0f) {
+                    boss->velocity.x = -4.0f;
+                } else {
+                    boss->velocity.x = 4.0f;
+                }
+            }
+        }
     }
 
-    if (!isGameOver) {
+    if (!isGameOver && !boss->isCrossing) {
         boss->shootTimer -= GetFrameTime();
         if (boss->shootTimer <= 0.0f) {
             for (int i = -1; i <= 1; i++) {
@@ -125,6 +157,7 @@ void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead, Asteroid* aster
             if (distance > 0) {
                 Bullet* newBullet = (Bullet*)malloc(sizeof(Bullet));
                 newBullet->position = ufo->position;
+
                 float speed = 6.0f;
                 newBullet->velocity.x = (dx / distance) * speed;
                 newBullet->velocity.y = (dy / distance) * speed;
@@ -147,8 +180,10 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
 
     if (!isGameOver && IsKeyDown(KEY_SPACE) && *shootCooldown <= 0.0f) {
         Bullet* newBullet = (Bullet*)malloc(sizeof(Bullet));
+
         newBullet->position.x = ship->position.x + cosf(baseAngle * DEG2RAD) * ship->size;
         newBullet->position.y = ship->position.y + sinf(baseAngle * DEG2RAD) * ship->size;
+
         float bulletSpeed = 10.0f;
         newBullet->velocity.x = cosf(baseAngle * DEG2RAD) * bulletSpeed;
         newBullet->velocity.y = sinf(baseAngle * DEG2RAD) * bulletSpeed;
@@ -317,6 +352,7 @@ void UpdateAsteroids(Asteroid* asteroids)
                 asteroids[i].position.x = -asteroids[i].radius;
             else if (asteroids[i].position.x < -asteroids[i].radius)
                 asteroids[i].position.x = screenWidth + asteroids[i].radius;
+
             if (asteroids[i].position.y > screenHeight + asteroids[i].radius)
                 asteroids[i].position.y = -asteroids[i].radius;
             else if (asteroids[i].position.y < -asteroids[i].radius)
@@ -397,14 +433,23 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
             boss->introTimer = 3.0f;
             boss->active = false;
 
-            boss->maxHealth = 15 + (*level * 2);
+            boss->maxHealth = 15 + (*level);
             boss->health = boss->maxHealth;
             boss->radius = 50.0f;
-            boss->position.x = screenWidth - 100;
+
+            if (ship->position.x < screenWidth / 2.0f) {
+                boss->position.x = screenWidth - 100;
+            } else {
+                boss->position.x = 100;
+            }
+
             boss->position.y = screenHeight / 2;
             boss->velocity.x = 0;
             boss->velocity.y = 3.0f;
             boss->shootTimer = 1.0f;
+            boss->bounceCount = 0;
+            boss->isCrossing = false;
+
         } else {
             if (*level >= 3 && !ufo->active) {
                 ufo->active = true;
