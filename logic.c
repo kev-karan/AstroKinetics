@@ -223,3 +223,48 @@ void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
         }
     }
 }
+
+void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead)
+{
+    bool allDestroyed = true;
+    for (int i = 0; i < MAX_ASTEROIDS; i++) {
+        if (asteroids[i].active) {
+            allDestroyed = false;
+            break;
+        }
+    }
+
+    if (allDestroyed) {
+        (*level)++;
+
+        Bullet* currentBullet = *bulletsHead;
+        while (currentBullet != NULL) {
+            Bullet* next = currentBullet->next;
+            free(currentBullet);
+            currentBullet = next;
+        }
+        *bulletsHead = NULL;
+
+        int spawnCount = 2 + (*level * 2);
+        if (spawnCount > MAX_ASTEROIDS / 2)
+            spawnCount = MAX_ASTEROIDS / 2;
+
+        for (int i = 0; i < spawnCount; i++) {
+            asteroids[i].active = true;
+            asteroids[i].radius = 40.0f;
+
+            for (int v = 0; v < ASTEROID_VERTICES; v++) {
+                asteroids[i].vertexOffsets[v] = GetRandomValue(80, 120) / 100.0f;
+            }
+
+            do {
+                asteroids[i].position.x = GetRandomValue(0, screenWidth);
+                asteroids[i].position.y = GetRandomValue(0, screenHeight);
+            } while (CheckCollisionCircles(asteroids[i].position, 40.0f, ship->position, 150.0f));
+
+            int speedBoost = (*level) * 20;
+            asteroids[i].velocity.x = GetRandomValue(-200 - speedBoost, 200 + speedBoost) / 100.0f;
+            asteroids[i].velocity.y = GetRandomValue(-200 - speedBoost, 200 + speedBoost) / 100.0f;
+        }
+    }
+}
