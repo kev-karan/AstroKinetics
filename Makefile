@@ -5,6 +5,6 @@ LDFLAGS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 all:
 	$(CC) main.c -o AstroKinetics.out $(CFLAGS) $(LDFLAGS)
 run: all
-	./AstroKinetics
+	./AstroKinetics.out
 clean:
-	rm -f AstroKinetics
+	rm -f AstroKinetics.out
