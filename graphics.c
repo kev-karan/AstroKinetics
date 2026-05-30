@@ -1,6 +1,6 @@
 #include "game.h"
 
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -36,10 +36,16 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score,
         }
     }
 
+    if (ufo->active) {
+        DrawEllipseLines(ufo->position.x, ufo->position.y, ufo->radius, ufo->radius * 0.4f, RED);
+        DrawEllipseLines(ufo->position.x, ufo->position.y - 4, ufo->radius * 0.5f, ufo->radius * 0.4f, RED);
+    }
+
     if (currentScreen != MENU) {
         Bullet* currentBullet = bulletsHead;
         while (currentBullet != NULL) {
-            DrawCircleV(currentBullet->position, 2.0f, WHITE);
+            Color bulletColor = currentBullet->isEnemy ? RED : WHITE;
+            DrawCircleV(currentBullet->position, 2.0f, bulletColor);
             currentBullet = currentBullet->next;
         }
     }

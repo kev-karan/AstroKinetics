@@ -38,7 +38,48 @@ void UpdatePlayer(Player* ship)
         ship->position.y = screenHeight + ship->size;
 }
 
-void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, int* score)
+void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead)
+{
+    if (!ufo->active)
+        return;
+
+    ufo->position.x += ufo->velocity.x;
+    ufo->position.y += ufo->velocity.y;
+
+    if (ufo->position.x > screenWidth + ufo->radius)
+        ufo->position.x = -ufo->radius;
+    else if (ufo->position.x < -ufo->radius)
+        ufo->position.x = screenWidth + ufo->radius;
+    if (ufo->position.y > screenHeight + ufo->radius)
+        ufo->position.y = -ufo->radius;
+    else if (ufo->position.y < -ufo->radius)
+        ufo->position.y = screenHeight + ufo->radius;
+
+    ufo->shootTimer -= GetFrameTime();
+    if (ufo->shootTimer <= 0.0f) {
+        float dx = ship->position.x - ufo->position.x;
+        float dy = ship->position.y - ufo->position.y;
+        float distance = sqrtf(dx * dx + dy * dy);
+
+        if (distance > 0) {
+            Bullet* newBullet = (Bullet*)malloc(sizeof(Bullet));
+            newBullet->position = ufo->position;
+
+            float speed = 6.0f;
+            newBullet->velocity.x = (dx / distance) * speed;
+            newBullet->velocity.y = (dy / distance) * speed;
+            newBullet->lifeTime = 1.5f;
+            newBullet->isEnemy = true;
+
+            newBullet->next = *bulletsHead;
+            *bulletsHead = newBullet;
+        }
+
+        ufo->shootTimer = GetRandomValue(150, 300) / 100.0f;
+    }
+}
+
+void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufo, int* score)
 {
     float baseAngle = ship->rotation - 90.0f;
 
@@ -55,6 +96,7 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
         newBullet->velocity.x = cosf(baseAngle * DEG2RAD) * bulletSpeed;
         newBullet->velocity.y = sinf(baseAngle * DEG2RAD) * bulletSpeed;
         newBullet->lifeTime = 0.9f;
+        newBullet->isEnemy = false;
 
         newBullet->next = *bulletsHead;
         *bulletsHead = newBullet;
@@ -79,43 +121,50 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
             currentBullet->position.y = screenHeight;
 
         bool bulletHit = false;
-        for (int i = 0; i < MAX_ASTEROIDS; i++) {
-            if (asteroids[i].active) {
-                if (CheckCollisionCircles(currentBullet->position, 2.0f, asteroids[i].position, asteroids[i].radius)) {
-                    bulletHit = true;
-                    asteroids[i].active = false;
 
-                    if (asteroids[i].radius >= 40.0f) {
-                        *score += 50;
-                    } else {
-                        *score += 100;
-                    }
+        if (!currentBullet->isEnemy) {
 
-                    if (asteroids[i].radius >= 20.0f) {
-                        float newRadius = asteroids[i].radius / 2.0f;
-                        int spawned = 0;
+            if (ufo->active && CheckCollisionCircles(currentBullet->position, 2.0f, ufo->position, ufo->radius)) {
+                bulletHit = true;
+                ufo->active = false;
+                *score += 500;
+            }
 
-                        for (int j = 0; j < MAX_ASTEROIDS && spawned < 2; j++) {
-                            if (!asteroids[j].active) {
-                                asteroids[j].active = true;
+            if (!bulletHit) {
+                for (int i = 0; i < MAX_ASTEROIDS; i++) {
+                    if (asteroids[i].active) {
+                        if (CheckCollisionCircles(currentBullet->position, 2.0f, asteroids[i].position, asteroids[i].radius)) {
+                            bulletHit = true;
+                            asteroids[i].active = false;
 
-                                float offset = (spawned == 0) ? -newRadius : newRadius;
-                                asteroids[j].position.x = asteroids[i].position.x + offset;
-                                asteroids[j].position.y = asteroids[i].position.y + offset;
+                            if (asteroids[i].radius >= 40.0f)
+                                *score += 50;
+                            else
+                                *score += 100;
 
-                                asteroids[j].radius = newRadius;
+                            if (asteroids[i].radius >= 20.0f) {
+                                float newRadius = asteroids[i].radius / 2.0f;
+                                int spawned = 0;
 
-                                for (int v = 0; v < ASTEROID_VERTICES; v++) {
-                                    asteroids[j].vertexOffsets[v] = GetRandomValue(80, 120) / 100.0f;
+                                for (int j = 0; j < MAX_ASTEROIDS && spawned < 2; j++) {
+                                    if (!asteroids[j].active) {
+                                        asteroids[j].active = true;
+                                        float offset = (spawned == 0) ? -newRadius : newRadius;
+                                        asteroids[j].position.x = asteroids[i].position.x + offset;
+                                        asteroids[j].position.y = asteroids[i].position.y + offset;
+                                        asteroids[j].radius = newRadius;
+                                        for (int v = 0; v < ASTEROID_VERTICES; v++) {
+                                            asteroids[j].vertexOffsets[v] = GetRandomValue(80, 120) / 100.0f;
+                                        }
+                                        asteroids[j].velocity.x = GetRandomValue(-300, 300) / 100.0f;
+                                        asteroids[j].velocity.y = GetRandomValue(-300, 300) / 100.0f;
+                                        spawned++;
+                                    }
                                 }
-
-                                asteroids[j].velocity.x = GetRandomValue(-300, 300) / 100.0f;
-                                asteroids[j].velocity.y = GetRandomValue(-300, 300) / 100.0f;
-                                spawned++;
                             }
+                            break;
                         }
                     }
-                    break;
                 }
             }
         }
@@ -224,7 +273,7 @@ void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
     }
 }
 
-void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead)
+void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufo)
 {
     bool allDestroyed = true;
     for (int i = 0; i < MAX_ASTEROIDS; i++) {
@@ -244,6 +293,20 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
             currentBullet = next;
         }
         *bulletsHead = NULL;
+
+        if (*level >= 3 && !ufo->active) {
+            ufo->active = true;
+            ufo->radius = 20.0f;
+            ufo->position.x = 0;
+            ufo->position.y = GetRandomValue(100, screenHeight - 100);
+            ufo->velocity.x = (*level % 2 == 0) ? -2.0f : 2.0f;
+
+            if (ufo->velocity.x < 0)
+                ufo->position.x = screenWidth;
+
+            ufo->velocity.y = GetRandomValue(-100, 100) / 100.0f;
+            ufo->shootTimer = 2.0f;
+        }
 
         int spawnCount = 2 + (*level * 2);
         if (spawnCount > MAX_ASTEROIDS / 2)
