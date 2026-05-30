@@ -470,7 +470,8 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
                 ufo->shootTimer = 2.0f;
             }
 
-            int spawnCount = 2 + (*level * 2);
+            int spawnCount = (*level) + 2;
+
             if (spawnCount > MAX_ASTEROIDS / 2)
                 spawnCount = MAX_ASTEROIDS / 2;
 

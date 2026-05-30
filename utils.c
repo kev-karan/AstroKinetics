@@ -47,7 +47,7 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* u
     for (int i = 0; i < MAX_ASTEROIDS; i++)
         asteroids[i].active = false;
 
-    int initialAsteroids = 4;
+    int initialAsteroids = 3;
     for (int i = 0; i < initialAsteroids; i++) {
         asteroids[i].active = true;
         asteroids[i].radius = 40.0f;
