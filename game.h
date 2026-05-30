@@ -30,6 +30,7 @@ typedef struct Bullet {
     Vector2 position;
     Vector2 velocity;
     float lifeTime;
+    bool isEnemy;
     struct Bullet* next;
 } Bullet;
 
@@ -41,22 +42,31 @@ typedef struct {
     float vertexOffsets[ASTEROID_VERTICES];
 } Asteroid;
 
+typedef struct {
+    Vector2 position;
+    Vector2 velocity;
+    float radius;
+    bool active;
+    float shootTimer;
+} Enemy;
+
 typedef enum GameScreen { MENU,
     GAMEPLAY,
     ENDING } GameScreen;
 
 // --- logic.c ---
 void UpdatePlayer(Player* ship);
-void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, int* score);
+void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufo, int* score);
+void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead);
 void UpdateAsteroids(Asteroid* asteroids);
 void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
-void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead);
+void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufo);
 
 // --- graphics.c ---
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
 
 // --- utils.c ---
-void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score, int* level, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* ufo, int* score, int* level, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
 int LoadHighScore(void);
 void SaveHighScore(int score);
 
