@@ -45,30 +45,32 @@ int main(void)
 
             bool playerHit = false;
 
-            for (int i = 0; i < MAX_ASTEROIDS; i++) {
-                if (asteroids[i].active && CheckCollisionCircles(ship.position, ship.size * 0.6f, asteroids[i].position, asteroids[i].radius)) {
+            if (ship.invulnerableTimer <= 0.0f) {
+                for (int i = 0; i < MAX_ASTEROIDS; i++) {
+                    if (asteroids[i].active && CheckCollisionCircles(ship.position, ship.size * 0.6f, asteroids[i].position, asteroids[i].radius)) {
+                        playerHit = true;
+                    }
+                }
+
+                if (ufo.active && CheckCollisionCircles(ship.position, ship.size * 0.6f, ufo.position, ufo.radius)) {
                     playerHit = true;
                 }
-            }
 
-            if (ufo.active && CheckCollisionCircles(ship.position, ship.size * 0.6f, ufo.position, ufo.radius)) {
-                playerHit = true;
-            }
-
-            if (boss.active && CheckCollisionCircles(ship.position, ship.size * 0.6f, boss.position, boss.radius * 0.8f)) {
-                playerHit = true;
-            }
-
-            Bullet* cb = bulletsHead;
-            while (cb != NULL) {
-                if (cb->isEnemy && CheckCollisionCircles(ship.position, ship.size * 0.6f, cb->position, 2.0f)) {
+                if (boss.active && CheckCollisionCircles(ship.position, ship.size * 0.6f, boss.position, boss.radius * 0.8f)) {
                     playerHit = true;
                 }
-                cb = cb->next;
+
+                Bullet* cb = bulletsHead;
+                while (cb != NULL) {
+                    if (cb->isEnemy && CheckCollisionCircles(ship.position, ship.size * 0.6f, cb->position, 2.0f)) {
+                        playerHit = true;
+                    }
+                    cb = cb->next;
+                }
             }
 
             if (playerHit) {
-                currentScreen = ENDING;
+                ship.lives--;
 
                 Bullet* cbToFree = bulletsHead;
                 while (cbToFree != NULL) {
@@ -78,9 +80,18 @@ int main(void)
                 }
                 bulletsHead = NULL;
 
-                if (score > highScore) {
-                    highScore = score;
-                    SaveHighScore(highScore);
+                if (ship.lives <= 0) {
+                    currentScreen = ENDING;
+                    ufo.active = false;
+
+                    if (score > highScore) {
+                        highScore = score;
+                        SaveHighScore(highScore);
+                    }
+                } else {
+                    ship.position = (Vector2) { screenWidth / 2.0f, screenHeight / 2.0f };
+                    ship.velocity = (Vector2) { 0, 0 };
+                    ship.invulnerableTimer = 2.0f;
                 }
             }
             break;

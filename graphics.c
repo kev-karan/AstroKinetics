@@ -76,10 +76,15 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
         Vector2 p1 = { ship->position.x + cosf(baseAngle * DEG2RAD) * ship->size, ship->position.y + sinf(baseAngle * DEG2RAD) * ship->size };
         Vector2 p2 = { ship->position.x + cosf((baseAngle + 140.0f) * DEG2RAD) * ship->size, ship->position.y + sinf((baseAngle + 140.0f) * DEG2RAD) * ship->size };
         Vector2 p3 = { ship->position.x + cosf((baseAngle - 140.0f) * DEG2RAD) * ship->size, ship->position.y + sinf((baseAngle - 140.0f) * DEG2RAD) * ship->size };
-        DrawTriangleLines(p1, p2, p3, ship->color);
+
+        if (ship->invulnerableTimer <= 0.0f || ((int)(ship->invulnerableTimer * 10) % 2 == 0)) {
+            DrawTriangleLines(p1, p2, p3, ship->color);
+        }
 
         DrawText(TextFormat("SCORE: %05i", score), 20, 20, 30, RAYWHITE);
         DrawText(TextFormat("HI-SCORE: %05i", highScore), 20, 60, 20, GRAY);
+
+        DrawText(TextFormat("LIVES: %i", ship->lives), 20, 90, 20, RAYWHITE);
 
         DrawText(TextFormat("WAVE %i", level), screenWidth / 2 - 40, 20, 20, RAYWHITE);
 
