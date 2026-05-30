@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include <math.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 typedef struct {
@@ -33,8 +34,10 @@ const int screenHeight = 600;
 void UpdatePlayer(Player* ship);
 void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, int* score);
 void UpdateAsteroids(Asteroid* asteroids);
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, bool gameOver);
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, bool gameOver);
 void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score, bool* gameOver);
+int LoadHighScore(void);
+void SaveHighScore(int score);
 
 int main(void)
 {
@@ -45,6 +48,7 @@ int main(void)
     Asteroid asteroids[MAX_ASTEROIDS] = { 0 };
 
     int score = 0;
+    int highScore = LoadHighScore();
     bool gameOver = false;
     float shootCooldown = 0.0f;
 
@@ -54,6 +58,7 @@ int main(void)
 
     while (!WindowShouldClose()) {
         UpdateAsteroids(asteroids);
+
         if (!gameOver) {
             UpdatePlayer(&ship);
             UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, &score);
@@ -61,7 +66,13 @@ int main(void)
             for (int i = 0; i < MAX_ASTEROIDS; i++) {
                 if (asteroids[i].active) {
                     if (CheckCollisionCircles(ship.position, ship.size * 0.6f, asteroids[i].position, asteroids[i].radius)) {
+
                         gameOver = true;
+
+                        if (score > highScore) {
+                            highScore = score;
+                            SaveHighScore(highScore);
+                        }
                     }
                 }
             }
@@ -71,7 +82,7 @@ int main(void)
             }
         }
 
-        DrawGame(&ship, bulletsHead, asteroids, score, gameOver);
+        DrawGame(&ship, bulletsHead, asteroids, score, highScore, gameOver);
     }
 
     Bullet* currentBullet = bulletsHead;
@@ -83,6 +94,26 @@ int main(void)
 
     CloseWindow();
     return 0;
+}
+
+int LoadHighScore(void)
+{
+    FILE* file = fopen("topscore.txt", "r");
+    int hs = 0;
+    if (file != NULL) {
+        fscanf(file, "%d", &hs);
+        fclose(file);
+    }
+    return hs;
+}
+
+void SaveHighScore(int score)
+{
+    FILE* file = fopen("topscore.txt", "w");
+    if (file != NULL) {
+        fprintf(file, "%d", score);
+        fclose(file);
+    }
 }
 
 void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, int* score, bool* gameOver)
@@ -275,7 +306,7 @@ void UpdateAsteroids(Asteroid* asteroids)
     }
 }
 
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, bool gameOver)
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score, int highScore, bool gameOver)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -301,6 +332,7 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, int score,
     }
 
     DrawText(TextFormat("SCORE: %05i", score), 20, 20, 30, RAYWHITE);
+    DrawText(TextFormat("HI-SCORE: %05i", highScore), 20, 60, 20, GRAY);
 
     if (gameOver) {
         int gameOverWidth = MeasureText("GAME OVER", 60);
