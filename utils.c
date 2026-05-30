@@ -71,8 +71,5 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* u
     }
 
     *score = 0;
-
-    // --- MODO DE TESTE ---
-    *level = 4;
-    // ---------------------
+    *level = 1;
 }
