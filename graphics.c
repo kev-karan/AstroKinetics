@@ -1,6 +1,6 @@
 #include "game.h"
 
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer)
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -37,9 +37,11 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
             }
         }
 
-        if (ufo->active) {
-            DrawEllipseLines(ufo->position.x, ufo->position.y, ufo->radius, ufo->radius * 0.4f, RED);
-            DrawEllipseLines(ufo->position.x, ufo->position.y - 4, ufo->radius * 0.5f, ufo->radius * 0.4f, RED);
+        for (int e = 0; e < MAX_UFOS; e++) {
+            if (ufos[e].active) {
+                DrawEllipseLines(ufos[e].position.x, ufos[e].position.y, ufos[e].radius, ufos[e].radius * 0.4f, RED);
+                DrawEllipseLines(ufos[e].position.x, ufos[e].position.y - 4, ufos[e].radius * 0.5f, ufos[e].radius * 0.4f, RED);
+            }
         }
 
         if (boss->active) {

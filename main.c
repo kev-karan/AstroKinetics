@@ -11,7 +11,7 @@ int main(void)
     Asteroid asteroids[MAX_ASTEROIDS] = { 0 };
     Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER] = { 0 };
 
-    Enemy ufo = { 0 };
+    Enemy ufos[MAX_UFOS] = { 0 };
     Boss boss = { 0 };
 
     int score = 0;
@@ -22,7 +22,7 @@ int main(void)
     GameScreen currentScreen = SPLASH;
     float splashTimer = 4.5f;
 
-    ResetGame(&ship, &bulletsHead, asteroids, &ufo, &boss, &score, &level, starfield);
+    ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
 
     SetTargetFPS(60);
 
@@ -38,24 +38,24 @@ int main(void)
 
             if (splashTimer <= 0.0f || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
 
-                ResetGame(&ship, &bulletsHead, asteroids, &ufo, &boss, &score, &level, starfield);
+                ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
                 currentScreen = MENU;
             }
         } else {
             switch (currentScreen) {
             case MENU:
                 if (IsKeyPressed(KEY_ENTER)) {
-                    ResetGame(&ship, &bulletsHead, asteroids, &ufo, &boss, &score, &level, starfield);
+                    ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
                     currentScreen = GAMEPLAY;
                 }
                 break;
 
             case GAMEPLAY:
                 UpdatePlayer(&ship);
-                UpdateEnemy(&ufo, &ship, &bulletsHead, asteroids, false);
+                UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, false);
                 UpdateBoss(&boss, &ship, &bulletsHead, false);
-                UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, &ufo, &boss, &score, false);
-                CheckLevelClear(asteroids, &level, &ship, &bulletsHead, &ufo, &boss);
+                UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, false);
+                CheckLevelClear(asteroids, &level, &ship, &bulletsHead, ufos, &boss);
 
                 bool playerHit = false;
 
@@ -66,8 +66,10 @@ int main(void)
                         }
                     }
 
-                    if (ufo.active && CheckCollisionCircles(ship.position, ship.size * 0.6f, ufo.position, ufo.radius)) {
-                        playerHit = true;
+                    for (int e = 0; e < MAX_UFOS; e++) {
+                        if (ufos[e].active && CheckCollisionCircles(ship.position, ship.size * 0.6f, ufos[e].position, ufos[e].radius)) {
+                            playerHit = true;
+                        }
                     }
 
                     if (boss.active && CheckCollisionCircles(ship.position, ship.size * 0.6f, boss.position, boss.radius * 0.8f)) {
@@ -96,7 +98,9 @@ int main(void)
 
                     if (ship.lives <= 0) {
                         currentScreen = ENDING;
-                        ufo.active = false;
+                        for (int e = 0; e < MAX_UFOS; e++) {
+                            ufos[e].active = false;
+                        }
 
                         if (score > highScore) {
                             highScore = score;
@@ -111,19 +115,19 @@ int main(void)
                 break;
 
             case ENDING:
-                UpdateEnemy(&ufo, &ship, &bulletsHead, asteroids, true);
+                UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, true);
                 UpdateBoss(&boss, &ship, &bulletsHead, true);
-                UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, &ufo, &boss, &score, true);
+                UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, true);
 
                 if (IsKeyPressed(KEY_ENTER)) {
-                    ResetGame(&ship, &bulletsHead, asteroids, &ufo, &boss, &score, &level, starfield);
+                    ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
                     currentScreen = MENU;
                 }
                 break;
             }
         }
 
-        DrawGame(&ship, bulletsHead, asteroids, &ufo, &boss, score, highScore, level, currentScreen, starfield, logoTexture, splashTimer);
+        DrawGame(&ship, bulletsHead, asteroids, ufos, &boss, score, highScore, level, currentScreen, starfield, logoTexture, splashTimer);
     }
 
     UnloadTexture(logoTexture);

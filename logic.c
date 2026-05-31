@@ -47,16 +47,49 @@ void UpdateBoss(Boss* boss, Player* ship, Bullet** bulletsHead, bool isGameOver)
     if (!boss->active)
         return;
 
-    boss->position.y += boss->velocity.y;
-    if (boss->position.y < boss->radius) {
-        boss->position.y = boss->radius;
-        boss->velocity.y *= -1;
-    } else if (boss->position.y > screenHeight - boss->radius) {
-        boss->position.y = screenHeight - boss->radius;
-        boss->velocity.y *= -1;
+    if (boss->isCrossing) {
+        boss->position.x += boss->velocity.x;
+
+        if (boss->velocity.x > 0 && boss->position.x >= screenWidth - 100) {
+            boss->position.x = screenWidth - 100;
+            boss->isCrossing = false;
+            boss->bounceCount = 0;
+            boss->velocity.x = 0;
+        } else if (boss->velocity.x < 0 && boss->position.x <= 100) {
+            boss->position.x = 100;
+            boss->isCrossing = false;
+            boss->bounceCount = 0;
+            boss->velocity.x = 0;
+        }
+    } else {
+        boss->position.y += boss->velocity.y;
+        bool bounced = false;
+
+        if (boss->position.y < boss->radius) {
+            boss->position.y = boss->radius;
+            boss->velocity.y *= -1;
+            bounced = true;
+        } else if (boss->position.y > screenHeight - boss->radius) {
+            boss->position.y = screenHeight - boss->radius;
+            boss->velocity.y *= -1;
+            bounced = true;
+        }
+
+        if (bounced) {
+            boss->bounceCount++;
+            if (boss->bounceCount >= 5) {
+                boss->isCrossing = true;
+
+                if (boss->position.x > screenWidth / 2.0f) {
+                    boss->velocity.x = -4.0f;
+                } else {
+                    boss->velocity.x = 4.0f;
+                }
+            }
+        }
     }
 
-    if (!isGameOver) {
+    if (!isGameOver && !boss->isCrossing) {
         boss->shootTimer -= GetFrameTime();
         if (boss->shootTimer <= 0.0f) {
             for (int i = -1; i <= 1; i++) {
@@ -78,72 +111,74 @@ void UpdateBoss(Boss* boss, Player* ship, Bullet** bulletsHead, bool isGameOver)
     }
 }
 
-void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead, Asteroid* asteroids, bool isGameOver)
+void UpdateEnemy(Enemy* ufos, Player* ship, Bullet** bulletsHead, Asteroid* asteroids, bool isGameOver)
 {
-    if (!ufo->active)
-        return;
+    for (int e = 0; e < MAX_UFOS; e++) {
+        if (!ufos[e].active)
+            continue;
 
-    if (!isGameOver) {
-        if (ship->position.y > ufo->position.y)
-            ufo->velocity.y += 0.03f;
-        else
-            ufo->velocity.y -= 0.03f;
+        if (!isGameOver) {
+            if (ship->position.y > ufos[e].position.y)
+                ufos[e].velocity.y += 0.03f;
+            else
+                ufos[e].velocity.y -= 0.03f;
 
-        if (ufo->velocity.y > 1.5f)
-            ufo->velocity.y = 1.5f;
-        if (ufo->velocity.y < -1.5f)
-            ufo->velocity.y = -1.5f;
-    }
+            if (ufos[e].velocity.y > 1.5f)
+                ufos[e].velocity.y = 1.5f;
+            if (ufos[e].velocity.y < -1.5f)
+                ufos[e].velocity.y = -1.5f;
+        }
 
-    ufo->position.x += ufo->velocity.x;
-    ufo->position.y += ufo->velocity.y;
+        ufos[e].position.x += ufos[e].velocity.x;
+        ufos[e].position.y += ufos[e].velocity.y;
 
-    if (ufo->position.x > screenWidth + ufo->radius)
-        ufo->position.x = -ufo->radius;
-    else if (ufo->position.x < -ufo->radius)
-        ufo->position.x = screenWidth + ufo->radius;
-    if (ufo->position.y > screenHeight + ufo->radius)
-        ufo->position.y = -ufo->radius;
-    else if (ufo->position.y < -ufo->radius)
-        ufo->position.y = screenHeight + ufo->radius;
+        if (ufos[e].position.x > screenWidth + ufos[e].radius)
+            ufos[e].position.x = -ufos[e].radius;
+        else if (ufos[e].position.x < -ufos[e].radius)
+            ufos[e].position.x = screenWidth + ufos[e].radius;
+        if (ufos[e].position.y > screenHeight + ufos[e].radius)
+            ufos[e].position.y = -ufos[e].radius;
+        else if (ufos[e].position.y < -ufos[e].radius)
+            ufos[e].position.y = screenHeight + ufos[e].radius;
 
-    for (int i = 0; i < MAX_ASTEROIDS; i++) {
-        if (asteroids[i].active) {
-            if (CheckCollisionCircles(ufo->position, ufo->radius, asteroids[i].position, asteroids[i].radius)) {
-                ufo->active = false;
-                break;
+        for (int i = 0; i < MAX_ASTEROIDS; i++) {
+            if (asteroids[i].active) {
+                if (CheckCollisionCircles(ufos[e].position, ufos[e].radius, asteroids[i].position, asteroids[i].radius)) {
+                    ufos[e].active = false;
+                    break;
+                }
             }
         }
-    }
 
-    if (!ufo->active)
-        return;
+        if (!ufos[e].active)
+            continue;
 
-    if (!isGameOver) {
-        ufo->shootTimer -= GetFrameTime();
-        if (ufo->shootTimer <= 0.0f) {
-            float dx = ship->position.x - ufo->position.x;
-            float dy = ship->position.y - ufo->position.y;
-            float distance = sqrtf(dx * dx + dy * dy);
+        if (!isGameOver) {
+            ufos[e].shootTimer -= GetFrameTime();
+            if (ufos[e].shootTimer <= 0.0f) {
+                float dx = ship->position.x - ufos[e].position.x;
+                float dy = ship->position.y - ufos[e].position.y;
+                float distance = sqrtf(dx * dx + dy * dy);
 
-            if (distance > 0) {
-                Bullet* newBullet = (Bullet*)malloc(sizeof(Bullet));
-                newBullet->position = ufo->position;
+                if (distance > 0) {
+                    Bullet* newBullet = (Bullet*)malloc(sizeof(Bullet));
+                    newBullet->position = ufos[e].position;
 
-                float speed = 6.0f;
-                newBullet->velocity.x = (dx / distance) * speed;
-                newBullet->velocity.y = (dy / distance) * speed;
-                newBullet->lifeTime = 1.5f;
-                newBullet->isEnemy = true;
-                newBullet->next = *bulletsHead;
-                *bulletsHead = newBullet;
+                    float speed = 6.0f;
+                    newBullet->velocity.x = (dx / distance) * speed;
+                    newBullet->velocity.y = (dy / distance) * speed;
+                    newBullet->lifeTime = 1.5f;
+                    newBullet->isEnemy = true;
+                    newBullet->next = *bulletsHead;
+                    *bulletsHead = newBullet;
+                }
+                ufos[e].shootTimer = GetRandomValue(150, 300) / 100.0f;
             }
-            ufo->shootTimer = GetRandomValue(150, 300) / 100.0f;
         }
     }
 }
 
-void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufo, Boss* boss, int* score, bool isGameOver)
+void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, bool isGameOver)
 {
     float baseAngle = ship->rotation - 90.0f;
 
@@ -197,10 +232,15 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                 }
             }
 
-            if (!bulletHit && ufo->active && CheckCollisionCircles(currentBullet->position, 2.0f, ufo->position, ufo->radius)) {
-                bulletHit = true;
-                ufo->active = false;
-                *score += 500;
+            if (!bulletHit) {
+                for (int e = 0; e < MAX_UFOS; e++) {
+                    if (ufos[e].active && CheckCollisionCircles(currentBullet->position, 2.0f, ufos[e].position, ufos[e].radius)) {
+                        bulletHit = true;
+                        ufos[e].active = false;
+                        *score += 500;
+                        break;
+                    }
+                }
             }
         }
 
@@ -349,7 +389,7 @@ void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
     }
 }
 
-void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufo, Boss* boss)
+void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufos, Boss* boss)
 {
     if (boss->introTimer > 0.0f) {
         boss->introTimer -= GetFrameTime();
@@ -402,6 +442,10 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
         }
         *bulletsHead = NULL;
 
+        for (int e = 0; e < MAX_UFOS; e++) {
+            ufos[e].active = false;
+        }
+
         if (*level % 5 == 0) {
             boss->introTimer = 3.0f;
             boss->active = false;
@@ -424,18 +468,28 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
             boss->isCrossing = false;
 
         } else {
-            if (*level >= 3 && !ufo->active) {
-                ufo->active = true;
-                ufo->radius = 20.0f;
-                ufo->position.x = 0;
-                ufo->position.y = GetRandomValue(100, screenHeight - 100);
-                ufo->velocity.x = (*level % 2 == 0) ? -2.0f : 2.0f;
+            if (*level >= 3) {
+                int targetUfos = 1 + (*level - 3) / 3;
+                if (targetUfos > MAX_UFOS)
+                    targetUfos = MAX_UFOS;
 
-                if (ufo->velocity.x < 0)
-                    ufo->position.x = screenWidth;
+                for (int e = 0; e < targetUfos; e++) {
+                    ufos[e].active = true;
+                    ufos[e].radius = 20.0f;
 
-                ufo->velocity.y = GetRandomValue(-100, 100) / 100.0f;
-                ufo->shootTimer = 2.0f;
+                    if (e % 2 == 0) {
+                        ufos[e].position.x = 0;
+                        ufos[e].velocity.x = 2.0f;
+                    } else {
+                        ufos[e].position.x = screenWidth;
+                        ufos[e].velocity.x = -2.0f;
+                    }
+
+                    ufos[e].position.y = GetRandomValue(100, screenHeight - 100);
+                    ufos[e].velocity.y = GetRandomValue(-100, 100) / 100.0f;
+
+                    ufos[e].shootTimer = 2.0f + (e * 0.5f);
+                }
             }
 
             int spawnCount = (*level) + 2;

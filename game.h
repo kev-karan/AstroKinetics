@@ -9,6 +9,7 @@
 
 // --- CONSTANTES ---
 #define MAX_ASTEROIDS 40
+#define MAX_UFOS 3
 #define ASTEROID_VERTICES 10
 #define NUM_LAYERS 3
 #define STARS_PER_LAYER 100
@@ -72,18 +73,18 @@ typedef enum GameScreen { SPLASH,
 
 // --- logic.c ---
 void UpdatePlayer(Player* ship);
-void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufo, Boss* boss, int* score, bool isGameOver);
-void UpdateEnemy(Enemy* ufo, Player* ship, Bullet** bulletsHead, Asteroid* asteroids, bool isGameOver);
+void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, bool isGameOver);
+void UpdateEnemy(Enemy* ufos, Player* ship, Bullet** bulletsHead, Asteroid* asteroids, bool isGameOver);
 void UpdateBoss(Boss* boss, Player* ship, Bullet** bulletsHead, bool isGameOver);
 void UpdateAsteroids(Asteroid* asteroids);
 void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
-void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufo, Boss* boss);
+void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufos, Boss* boss);
 
 // --- graphics.c ---
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer);
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer);
 
 // --- utils.c ---
-void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* ufo, Boss* boss, int* score, int* level, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, int* level, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
 int LoadHighScore(void);
 void SaveHighScore(int score);
 
