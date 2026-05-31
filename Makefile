@@ -17,7 +17,7 @@ else ifeq ($(UNAME_S), Darwin)
 else
     LDFLAGS = -lraylib -lopengl32 -lgdi32 -lwinmm
     TARGET = AstroKinetics.exe
-    RUN_CMD = $(TARGET)
+    RUN_CMD = ./$(TARGET) 
 endif
 
 all: $(TARGET)
