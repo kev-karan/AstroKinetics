@@ -65,7 +65,8 @@ typedef struct {
     bool isCrossing;
 } Boss;
 
-typedef enum GameScreen { MENU,
+typedef enum GameScreen { SPLASH,
+    MENU,
     GAMEPLAY,
     ENDING } GameScreen;
 
@@ -79,7 +80,7 @@ void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
 void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufo, Boss* boss);
 
 // --- graphics.c ---
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer);
 
 // --- utils.c ---
 void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* ufo, Boss* boss, int* score, int* level, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);

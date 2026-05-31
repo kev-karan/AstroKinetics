@@ -1,6 +1,6 @@
 #include "game.h"
 
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -19,38 +19,38 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
         }
     }
 
-    for (int i = 0; i < MAX_ASTEROIDS; i++) {
-        if (asteroids[i].active) {
-            for (int j = 0; j < ASTEROID_VERTICES; j++) {
-                float angle1 = (j * 360.0f / ASTEROID_VERTICES) * DEG2RAD;
-                float angle2 = (((j + 1) % ASTEROID_VERTICES) * 360.0f / ASTEROID_VERTICES) * DEG2RAD;
+    if (currentScreen == GAMEPLAY || currentScreen == ENDING) {
+        for (int i = 0; i < MAX_ASTEROIDS; i++) {
+            if (asteroids[i].active) {
+                for (int j = 0; j < ASTEROID_VERTICES; j++) {
+                    float angle1 = (j * 360.0f / ASTEROID_VERTICES) * DEG2RAD;
+                    float angle2 = (((j + 1) % ASTEROID_VERTICES) * 360.0f / ASTEROID_VERTICES) * DEG2RAD;
 
-                float r1 = asteroids[i].radius * asteroids[i].vertexOffsets[j];
-                float r2 = asteroids[i].radius * asteroids[i].vertexOffsets[(j + 1) % ASTEROID_VERTICES];
+                    float r1 = asteroids[i].radius * asteroids[i].vertexOffsets[j];
+                    float r2 = asteroids[i].radius * asteroids[i].vertexOffsets[(j + 1) % ASTEROID_VERTICES];
 
-                Vector2 p1 = { asteroids[i].position.x + cosf(angle1) * r1, asteroids[i].position.y + sinf(angle1) * r1 };
-                Vector2 p2 = { asteroids[i].position.x + cosf(angle2) * r2, asteroids[i].position.y + sinf(angle2) * r2 };
+                    Vector2 p1 = { asteroids[i].position.x + cosf(angle1) * r1, asteroids[i].position.y + sinf(angle1) * r1 };
+                    Vector2 p2 = { asteroids[i].position.x + cosf(angle2) * r2, asteroids[i].position.y + sinf(angle2) * r2 };
 
-                DrawLineV(p1, p2, RAYWHITE);
+                    DrawLineV(p1, p2, RAYWHITE);
+                }
             }
         }
-    }
 
-    if (ufo->active) {
-        DrawEllipseLines(ufo->position.x, ufo->position.y, ufo->radius, ufo->radius * 0.4f, RED);
-        DrawEllipseLines(ufo->position.x, ufo->position.y - 4, ufo->radius * 0.5f, ufo->radius * 0.4f, RED);
-    }
+        if (ufo->active) {
+            DrawEllipseLines(ufo->position.x, ufo->position.y, ufo->radius, ufo->radius * 0.4f, RED);
+            DrawEllipseLines(ufo->position.x, ufo->position.y - 4, ufo->radius * 0.5f, ufo->radius * 0.4f, RED);
+        }
 
-    if (boss->active) {
-        DrawPoly(boss->position, 8, boss->radius, 0, PURPLE);
-        DrawPolyLines(boss->position, 8, boss->radius, 0, MAGENTA);
+        if (boss->active) {
+            DrawPoly(boss->position, 8, boss->radius, 0, PURPLE);
+            DrawPolyLines(boss->position, 8, boss->radius, 0, MAGENTA);
 
-        float hpPercentage = (float)boss->health / boss->maxHealth;
-        DrawRectangle(boss->position.x - 40, boss->position.y - boss->radius - 20, 80 * hpPercentage, 8, RED);
-        DrawRectangleLines(boss->position.x - 40, boss->position.y - boss->radius - 20, 80, 8, WHITE);
-    }
+            float hpPercentage = (float)boss->health / boss->maxHealth;
+            DrawRectangle(boss->position.x - 40, boss->position.y - boss->radius - 20, 80 * hpPercentage, 8, RED);
+            DrawRectangleLines(boss->position.x - 40, boss->position.y - boss->radius - 20, 80, 8, WHITE);
+        }
 
-    if (currentScreen != MENU) {
         Bullet* currentBullet = bulletsHead;
         while (currentBullet != NULL) {
             Color bulletColor = currentBullet->isEnemy ? RED : WHITE;
@@ -60,6 +60,30 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
     }
 
     switch (currentScreen) {
+    case SPLASH: {
+        float scale = 0.18f;
+
+        Vector2 logoPos = {
+            (screenWidth / 2.0f) - ((logoTexture.width * scale) / 2.0f),
+            (screenHeight / 2.0f) - ((logoTexture.height * scale) / 2.0f)
+        };
+
+        float alpha = 1.0f;
+
+        if (splashTimer > 3.0f) {
+            alpha = 4.0f - splashTimer;
+        } else if (splashTimer < 1.0f) {
+            alpha = splashTimer;
+        }
+
+        if (alpha < 0.0f)
+            alpha = 0.0f;
+        if (alpha > 1.0f)
+            alpha = 1.0f;
+
+        DrawTextureEx(logoTexture, logoPos, 0.0f, scale, Fade(WHITE, alpha));
+    } break;
+
     case MENU: {
         int titleWidth = MeasureText("AstroKinetics", 60);
         DrawText("AstroKinetics", (screenWidth / 2) - (titleWidth / 2), screenHeight / 2 - 80, 60, RAYWHITE);
@@ -77,7 +101,13 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
         Vector2 p2 = { ship->position.x + cosf((baseAngle + 140.0f) * DEG2RAD) * ship->size, ship->position.y + sinf((baseAngle + 140.0f) * DEG2RAD) * ship->size };
         Vector2 p3 = { ship->position.x + cosf((baseAngle - 140.0f) * DEG2RAD) * ship->size, ship->position.y + sinf((baseAngle - 140.0f) * DEG2RAD) * ship->size };
 
-        if (ship->invulnerableTimer <= 0.0f || ((int)(ship->invulnerableTimer * 10) % 2 == 0)) {
+        bool drawShip = true;
+        if (ship->invulnerableTimer > 0.0f) {
+            if ((int)(ship->invulnerableTimer * 10) % 2 == 0) {
+                drawShip = false;
+            }
+        }
+        if (drawShip) {
             DrawTriangleLines(p1, p2, p3, ship->color);
         }
 

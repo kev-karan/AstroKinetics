@@ -47,48 +47,16 @@ void UpdateBoss(Boss* boss, Player* ship, Bullet** bulletsHead, bool isGameOver)
     if (!boss->active)
         return;
 
-    if (boss->isCrossing) {
-        boss->position.x += boss->velocity.x;
-
-        if (boss->velocity.x > 0 && boss->position.x >= screenWidth - 100) {
-            boss->position.x = screenWidth - 100;
-            boss->isCrossing = false;
-            boss->bounceCount = 0;
-            boss->velocity.x = 0;
-        } else if (boss->velocity.x < 0 && boss->position.x <= 100) {
-            boss->position.x = 100;
-            boss->isCrossing = false;
-            boss->bounceCount = 0;
-            boss->velocity.x = 0;
-        }
-    } else {
-        boss->position.y += boss->velocity.y;
-        bool bounced = false;
-
-        if (boss->position.y < boss->radius) {
-            boss->position.y = boss->radius;
-            boss->velocity.y *= -1;
-            bounced = true;
-        } else if (boss->position.y > screenHeight - boss->radius) {
-            boss->position.y = screenHeight - boss->radius;
-            boss->velocity.y *= -1;
-            bounced = true;
-        }
-
-        if (bounced) {
-            boss->bounceCount++;
-            if (boss->bounceCount >= 5) {
-                boss->isCrossing = true;
-                if (boss->position.x > screenWidth / 2.0f) {
-                    boss->velocity.x = -4.0f;
-                } else {
-                    boss->velocity.x = 4.0f;
-                }
-            }
-        }
+    boss->position.y += boss->velocity.y;
+    if (boss->position.y < boss->radius) {
+        boss->position.y = boss->radius;
+        boss->velocity.y *= -1;
+    } else if (boss->position.y > screenHeight - boss->radius) {
+        boss->position.y = screenHeight - boss->radius;
+        boss->velocity.y *= -1;
     }
 
-    if (!isGameOver && !boss->isCrossing) {
+    if (!isGameOver) {
         boss->shootTimer -= GetFrameTime();
         if (boss->shootTimer <= 0.0f) {
             for (int i = -1; i <= 1; i++) {
