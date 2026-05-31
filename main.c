@@ -88,19 +88,8 @@ int main(void)
                 if (playerHit) {
                     ship.lives--;
 
-                    Bullet* cbToFree = bulletsHead;
-                    while (cbToFree != NULL) {
-                        Bullet* next = cbToFree->next;
-                        free(cbToFree);
-                        cbToFree = next;
-                    }
-                    bulletsHead = NULL;
-
                     if (ship.lives <= 0) {
                         currentScreen = ENDING;
-                        for (int e = 0; e < MAX_UFOS; e++) {
-                            ufos[e].active = false;
-                        }
 
                         if (score > highScore) {
                             highScore = score;
