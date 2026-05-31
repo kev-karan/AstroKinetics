@@ -99,9 +99,18 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
 
     case GAMEPLAY: {
         float baseAngle = ship->rotation - 90.0f;
-        Vector2 p1 = { ship->position.x + cosf(baseAngle * DEG2RAD) * ship->size, ship->position.y + sinf(baseAngle * DEG2RAD) * ship->size };
-        Vector2 p2 = { ship->position.x + cosf((baseAngle + 140.0f) * DEG2RAD) * ship->size, ship->position.y + sinf((baseAngle + 140.0f) * DEG2RAD) * ship->size };
-        Vector2 p3 = { ship->position.x + cosf((baseAngle - 140.0f) * DEG2RAD) * ship->size, ship->position.y + sinf((baseAngle - 140.0f) * DEG2RAD) * ship->size };
+
+        Vector2 p1 = { ship->position.x + cosf(baseAngle * DEG2RAD) * ship->size,
+            ship->position.y + sinf(baseAngle * DEG2RAD) * ship->size };
+
+        Vector2 p2 = { ship->position.x + cosf((baseAngle + 140.0f) * DEG2RAD) * ship->size,
+            ship->position.y + sinf((baseAngle + 140.0f) * DEG2RAD) * ship->size };
+
+        Vector2 p3 = { ship->position.x + cosf((baseAngle + 180.0f) * DEG2RAD) * (ship->size * 0.4f),
+            ship->position.y + sinf((baseAngle + 180.0f) * DEG2RAD) * (ship->size * 0.4f) };
+
+        Vector2 p4 = { ship->position.x + cosf((baseAngle - 140.0f) * DEG2RAD) * ship->size,
+            ship->position.y + sinf((baseAngle - 140.0f) * DEG2RAD) * ship->size };
 
         bool drawShip = true;
         if (ship->invulnerableTimer > 0.0f) {
@@ -109,15 +118,33 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
                 drawShip = false;
             }
         }
+
         if (drawShip) {
-            DrawTriangleLines(p1, p2, p3, ship->color);
+            DrawLineEx(p1, p2, 2.0f, ship->color);
+            DrawLineEx(p2, p3, 2.0f, ship->color);
+            DrawLineEx(p3, p4, 2.0f, ship->color);
+            DrawLineEx(p4, p1, 2.0f, ship->color);
+
+            if (IsKeyDown(KEY_UP)) {
+                float flicker = GetRandomValue(8, 14) / 10.0f;
+
+                Vector2 flameTip = { ship->position.x + cosf((baseAngle + 180.0f) * DEG2RAD) * (ship->size * flicker),
+                    ship->position.y + sinf((baseAngle + 180.0f) * DEG2RAD) * (ship->size * flicker) };
+
+                Vector2 flameBaseR = { ship->position.x + cosf((baseAngle + 155.0f) * DEG2RAD) * (ship->size * 0.6f),
+                    ship->position.y + sinf((baseAngle + 155.0f) * DEG2RAD) * (ship->size * 0.6f) };
+
+                Vector2 flameBaseL = { ship->position.x + cosf((baseAngle - 155.0f) * DEG2RAD) * (ship->size * 0.6f),
+                    ship->position.y + sinf((baseAngle - 155.0f) * DEG2RAD) * (ship->size * 0.6f) };
+
+                DrawLineEx(flameBaseR, flameTip, 2.0f, ORANGE);
+                DrawLineEx(flameBaseL, flameTip, 2.0f, ORANGE);
+            }
         }
 
         DrawText(TextFormat("SCORE: %05i", score), 20, 20, 30, RAYWHITE);
         DrawText(TextFormat("HI-SCORE: %05i", highScore), 20, 60, 20, GRAY);
-
         DrawText(TextFormat("LIVES: %i", ship->lives), 20, 90, 20, RAYWHITE);
-
         DrawText(TextFormat("WAVE %i", level), screenWidth / 2 - 40, 20, 20, RAYWHITE);
 
         if (boss->introTimer > 0.0f) {
