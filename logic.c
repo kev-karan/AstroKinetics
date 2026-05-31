@@ -42,7 +42,7 @@ void UpdatePlayer(Player* ship)
         ship->position.y = screenHeight + ship->size;
 }
 
-void UpdateBoss(Boss* boss, Player* ship, Bullet** bulletsHead, bool isGameOver)
+void UpdateBoss(Boss* boss, Player* ship, Bullet** bulletsHead, bool isGameOver, GameSounds* fx)
 {
     if (!boss->active)
         return;
@@ -106,12 +106,13 @@ void UpdateBoss(Boss* boss, Player* ship, Bullet** bulletsHead, bool isGameOver)
                 newBullet->next = *bulletsHead;
                 *bulletsHead = newBullet;
             }
+            PlaySound(fx->enemyShoot);
             boss->shootTimer = 1.5f;
         }
     }
 }
 
-void UpdateEnemy(Enemy* ufos, Player* ship, Bullet** bulletsHead, Asteroid* asteroids, bool isGameOver)
+void UpdateEnemy(Enemy* ufos, Player* ship, Bullet** bulletsHead, Asteroid* asteroids, bool isGameOver, GameSounds* fx)
 {
     for (int e = 0; e < MAX_UFOS; e++) {
         if (!ufos[e].active)
@@ -164,7 +165,6 @@ void UpdateEnemy(Enemy* ufos, Player* ship, Bullet** bulletsHead, Asteroid* aste
                 }
             }
         }
-        // -----------------------------------------
 
         if (!isGameOver) {
             ufos[e].shootTimer -= GetFrameTime();
@@ -184,6 +184,8 @@ void UpdateEnemy(Enemy* ufos, Player* ship, Bullet** bulletsHead, Asteroid* aste
                     newBullet->isEnemy = true;
                     newBullet->next = *bulletsHead;
                     *bulletsHead = newBullet;
+
+                    PlaySound(fx->enemyShoot);
                 }
                 ufos[e].shootTimer = GetRandomValue(150, 300) / 100.0f;
             }
@@ -191,7 +193,7 @@ void UpdateEnemy(Enemy* ufos, Player* ship, Bullet** bulletsHead, Asteroid* aste
     }
 }
 
-void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, bool isGameOver)
+void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, bool isGameOver, GameSounds* fx)
 {
     float baseAngle = ship->rotation - 90.0f;
 
@@ -212,6 +214,8 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
         newBullet->next = *bulletsHead;
         *bulletsHead = newBullet;
         *shootCooldown = 0.2f;
+
+        PlaySound(fx->shoot);
     }
 
     Bullet* currentBullet = *bulletsHead;
@@ -242,6 +246,9 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                 if (boss->health <= 0) {
                     boss->active = false;
                     *score += 2000;
+                    PlaySound(fx->enemyExplosion);
+                } else {
+                    PlaySound(fx->bossHit);
                 }
             }
 
@@ -251,6 +258,7 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                         bulletHit = true;
                         ufos[e].active = false;
                         *score += 500;
+                        PlaySound(fx->enemyExplosion);
                         break;
                     }
                 }
@@ -265,6 +273,7 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
 
                         if (!currentBullet->isEnemy) {
                             asteroids[i].active = false;
+                            PlaySound(fx->explosion);
 
                             if (asteroids[i].radius >= 40.0f)
                                 *score += 50;
@@ -402,7 +411,7 @@ void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
     }
 }
 
-void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufos, Boss* boss)
+void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufos, Boss* boss, GameSounds* fx)
 {
     if (boss->introTimer > 0.0f) {
         boss->introTimer -= GetFrameTime();
@@ -446,6 +455,7 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
     if (allDestroyed) {
         (*level)++;
         ship->lives++;
+        PlaySound(fx->levelUp);
 
         Bullet* currentBullet = *bulletsHead;
         while (currentBullet != NULL) {

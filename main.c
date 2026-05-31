@@ -4,7 +4,22 @@ int main(void)
 {
     InitWindow(screenWidth, screenHeight, "AstroKinetics");
 
+    InitAudioDevice();
+
     Texture2D logoTexture = LoadTexture("BolaFora-white.png");
+
+    Music bgm = LoadMusicStream("IswearIsawit.ogg");
+    PlayMusicStream(bgm);
+
+    GameSounds fx = { 0 };
+    fx.shoot = LoadSound("shoot.wav");
+    fx.explosion = LoadSound("explosion.wav");
+    fx.enemyShoot = LoadSound("enemy_shoot.wav");
+    fx.enemyExplosion = LoadSound("enemy_explosion.wav");
+    fx.bossHit = LoadSound("boss_hit.wav");
+    fx.playerDeath = LoadSound("player_death.wav");
+    fx.levelUp = LoadSound("level_up.wav");
+    fx.select = LoadSound("select.wav");
 
     Player ship = { 0 };
     Bullet* bulletsHead = NULL;
@@ -24,102 +39,136 @@ int main(void)
 
     ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
 
+    for (int i = 0; i < NUM_LAYERS; i++) {
+        for (int j = 0; j < STARS_PER_LAYER; j++) {
+            starfield[i][j].x = GetRandomValue(0, screenWidth);
+            starfield[i][j].y = GetRandomValue(0, screenHeight);
+        }
+    }
+
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
+        UpdateMusicStream(bgm);
+
         UpdateStarfield(starfield);
 
         if (currentScreen == GAMEPLAY || currentScreen == ENDING) {
             UpdateAsteroids(asteroids);
         }
 
-        if (currentScreen == SPLASH) {
+        switch (currentScreen) {
+        case SPLASH:
             splashTimer -= GetFrameTime();
 
             if (splashTimer <= 0.0f || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
-
+                PlaySound(fx.select);
                 ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
                 currentScreen = MENU;
             }
-        } else {
-            switch (currentScreen) {
-            case MENU:
-                if (IsKeyPressed(KEY_ENTER)) {
-                    ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
-                    currentScreen = GAMEPLAY;
-                }
-                break;
+            break;
 
-            case GAMEPLAY:
-                UpdatePlayer(&ship);
-                UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, false);
-                UpdateBoss(&boss, &ship, &bulletsHead, false);
-                UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, false);
-                CheckLevelClear(asteroids, &level, &ship, &bulletsHead, ufos, &boss);
+        case MENU:
+            if (IsKeyPressed(KEY_ENTER)) {
+                PlaySound(fx.select);
+                ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
+                currentScreen = GAMEPLAY;
+            }
+            break;
 
-                bool playerHit = false;
+        case GAMEPLAY:
+            UpdatePlayer(&ship);
+            UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, false, &fx);
+            UpdateBoss(&boss, &ship, &bulletsHead, false, &fx);
+            UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, false, &fx);
+            CheckLevelClear(asteroids, &level, &ship, &bulletsHead, ufos, &boss, &fx);
 
-                if (ship.invulnerableTimer <= 0.0f) {
-                    for (int i = 0; i < MAX_ASTEROIDS; i++) {
-                        if (asteroids[i].active && CheckCollisionCircles(ship.position, ship.size * 0.6f, asteroids[i].position, asteroids[i].radius)) {
-                            playerHit = true;
-                        }
-                    }
+            bool playerHit = false;
 
-                    for (int e = 0; e < MAX_UFOS; e++) {
-                        if (ufos[e].active && CheckCollisionCircles(ship.position, ship.size * 0.6f, ufos[e].position, ufos[e].radius)) {
-                            playerHit = true;
-                        }
-                    }
-
-                    if (boss.active && CheckCollisionCircles(ship.position, ship.size * 0.6f, boss.position, boss.radius * 0.8f)) {
+            if (ship.invulnerableTimer <= 0.0f) {
+                for (int i = 0; i < MAX_ASTEROIDS; i++) {
+                    if (asteroids[i].active && CheckCollisionCircles(ship.position, ship.size * 0.6f, asteroids[i].position, asteroids[i].radius)) {
                         playerHit = true;
                     }
+                }
 
-                    Bullet* cb = bulletsHead;
-                    while (cb != NULL) {
-                        if (cb->isEnemy && CheckCollisionCircles(ship.position, ship.size * 0.6f, cb->position, 2.0f)) {
-                            playerHit = true;
-                        }
-                        cb = cb->next;
+                for (int e = 0; e < MAX_UFOS; e++) {
+                    if (ufos[e].active && CheckCollisionCircles(ship.position, ship.size * 0.6f, ufos[e].position, ufos[e].radius)) {
+                        playerHit = true;
                     }
                 }
 
-                if (playerHit) {
-                    ship.lives--;
+                if (boss.active && CheckCollisionCircles(ship.position, ship.size * 0.6f, boss.position, boss.radius * 0.8f)) {
+                    playerHit = true;
+                }
 
-                    if (ship.lives <= 0) {
-                        currentScreen = ENDING;
-
-                        if (score > highScore) {
-                            highScore = score;
-                            SaveHighScore(highScore);
-                        }
-                    } else {
-                        ship.position = (Vector2) { screenWidth / 2.0f, screenHeight / 2.0f };
-                        ship.velocity = (Vector2) { 0, 0 };
-                        ship.invulnerableTimer = 2.0f;
+                Bullet* cb = bulletsHead;
+                while (cb != NULL) {
+                    if (cb->isEnemy && CheckCollisionCircles(ship.position, ship.size * 0.6f, cb->position, 2.0f)) {
+                        playerHit = true;
                     }
+                    cb = cb->next;
                 }
-                break;
-
-            case ENDING:
-                UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, true);
-                UpdateBoss(&boss, &ship, &bulletsHead, true);
-                UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, true);
-
-                if (IsKeyPressed(KEY_ENTER)) {
-                    ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
-                    currentScreen = MENU;
-                }
-                break;
             }
+
+            if (playerHit) {
+                ship.lives--;
+                PlaySound(fx.playerDeath);
+
+                Bullet* cbToFree = bulletsHead;
+                while (cbToFree != NULL) {
+                    Bullet* next = cbToFree->next;
+                    free(cbToFree);
+                    cbToFree = next;
+                }
+                bulletsHead = NULL;
+
+                if (ship.lives <= 0) {
+                    currentScreen = ENDING;
+                    for (int e = 0; e < MAX_UFOS; e++) {
+                        ufos[e].active = false;
+                    }
+
+                    if (score > highScore) {
+                        highScore = score;
+                        SaveHighScore(highScore);
+                    }
+                } else {
+                    ship.position = (Vector2) { screenWidth / 2.0f, screenHeight / 2.0f };
+                    ship.velocity = (Vector2) { 0, 0 };
+                    ship.invulnerableTimer = 2.0f;
+                }
+            }
+            break;
+
+        case ENDING:
+            UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, true, &fx);
+            UpdateBoss(&boss, &ship, &bulletsHead, true, &fx);
+            UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, true, &fx);
+
+            if (IsKeyPressed(KEY_ENTER)) {
+                PlaySound(fx.select);
+                ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
+                currentScreen = MENU;
+            }
+            break;
         }
 
         DrawGame(&ship, bulletsHead, asteroids, ufos, &boss, score, highScore, level, currentScreen, starfield, logoTexture, splashTimer);
     }
 
     UnloadTexture(logoTexture);
+
+    UnloadMusicStream(bgm);
+    UnloadSound(fx.shoot);
+    UnloadSound(fx.explosion);
+    UnloadSound(fx.enemyShoot);
+    UnloadSound(fx.enemyExplosion);
+    UnloadSound(fx.bossHit);
+    UnloadSound(fx.playerDeath);
+    UnloadSound(fx.levelUp);
+    UnloadSound(fx.select);
+    CloseAudioDevice();
 
     Bullet* currentBullet = bulletsHead;
     while (currentBullet != NULL) {
