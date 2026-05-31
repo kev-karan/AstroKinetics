@@ -1,6 +1,6 @@
 #include "game.h"
 
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer, Particle* particles, float hyperspaceTimer)
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int score, HighScoreEntry* highScores, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer, Particle* particles, float hyperspaceTimer, char* nameInput, int letterIndex, int frameCounter, int newScoreIndex)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -29,7 +29,7 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
         }
     }
 
-    if (currentScreen == GAMEPLAY || currentScreen == ENDING) {
+    if (currentScreen == GAMEPLAY || currentScreen == ENDING || currentScreen == NAME_ENTRY || currentScreen == TOP_SCORES) {
         for (int i = 0; i < MAX_ASTEROIDS; i++) {
             if (asteroids[i].active) {
                 for (int j = 0; j < ASTEROID_VERTICES; j++) {
@@ -115,8 +115,9 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
         int startWidth = MeasureText("PRESS ENTER TO START", 20);
         DrawText("PRESS ENTER TO START", (screenWidth / 2) - (startWidth / 2), screenHeight / 2 + 20, 20, GRAY);
 
-        int hsWidth = MeasureText(TextFormat("HI-SCORE: %05i", highScore), 20);
-        DrawText(TextFormat("HI-SCORE: %05i", highScore), (screenWidth / 2) - (hsWidth / 2), screenHeight / 2 + 80, 20, DARKGRAY);
+        const char* hsText = TextFormat("HI-SCORE: %s %05i", highScores[0].name, highScores[0].score);
+        int hsWidth = MeasureText(hsText, 20);
+        DrawText(hsText, (screenWidth / 2) - (hsWidth / 2), screenHeight / 2 + 80, 20, DARKGRAY);
     } break;
 
     case GAMEPLAY: {
@@ -165,7 +166,8 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
         }
 
         DrawText(TextFormat("SCORE: %05i", score), 20, 20, 30, RAYWHITE);
-        DrawText(TextFormat("HI-SCORE: %05i", highScore), 20, 60, 20, GRAY);
+        DrawText(TextFormat("HI-SCORE: %s %05i", highScores[0].name, highScores[0].score), 20, 60, 20, GRAY);
+
         DrawText(TextFormat("LIVES: %i", ship->lives), 20, 90, 20, RAYWHITE);
         DrawText(TextFormat("WAVE %i", level), screenWidth / 2 - 40, 20, 20, RAYWHITE);
 
@@ -181,13 +183,59 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
 
     case ENDING: {
         DrawText(TextFormat("SCORE: %05i", score), 20, 20, 30, RAYWHITE);
-        DrawText(TextFormat("HI-SCORE: %05i", highScore), 20, 60, 20, GRAY);
 
         int gameOverWidth = MeasureText("GAME OVER", 60);
         DrawText("GAME OVER", (screenWidth / 2) - (gameOverWidth / 2), screenHeight / 2 - 50, 60, RED);
 
+        if (newScoreIndex != -1) {
+            int recordWidth = MeasureText("NEW RECORD!", 30);
+            DrawText("NEW RECORD!", (screenWidth / 2) - (recordWidth / 2), screenHeight / 2 + 20, 30, YELLOW);
+
+            int restartWidth = MeasureText("PRESS ENTER TO REGISTER", 20);
+            DrawText("PRESS ENTER TO REGISTER", (screenWidth / 2) - (restartWidth / 2), screenHeight / 2 + 70, 20, GRAY);
+        } else {
+            int restartWidth = MeasureText("PRESS ENTER TO CONTINUE", 20);
+            DrawText("PRESS ENTER TO CONTINUE", (screenWidth / 2) - (restartWidth / 2), screenHeight / 2 + 30, 20, GRAY);
+        }
+    } break;
+
+    case NAME_ENTRY: {
+        DrawText(TextFormat("SCORE: %05i", score), 20, 20, 30, RAYWHITE);
+
+        int subMsgWidth = MeasureText("ENTER YOUR INITIALS", 20);
+        DrawText("ENTER YOUR INITIALS", (screenWidth / 2) - (subMsgWidth / 2), screenHeight / 2 - 40, 20, GRAY);
+
+        for (int i = 0; i < 3; i++) {
+            Color letterColor = (i == letterIndex) ? RAYWHITE : DARKGRAY;
+            DrawText(TextFormat("%c", nameInput[i]), (screenWidth / 2) - 40 + (i * 30), screenHeight / 2 + 10, 40, letterColor);
+
+            if (i == letterIndex && (frameCounter / 15) % 2 == 0) {
+                DrawText("_", (screenWidth / 2) - 40 + (i * 30), screenHeight / 2 + 15, 40, GRAY);
+            }
+        }
+
+        int hintWidth = MeasureText("ARROWS to change - ENTER to confirm", 20);
+        DrawText("ARROWS to change - ENTER to confirm", (screenWidth / 2) - (hintWidth / 2), screenHeight / 2 + 100, 20, DARKGRAY);
+
+    } break;
+
+    case TOP_SCORES: {
+        int topTitleWidth = MeasureText("TOP 5 PILOTS", 30);
+        DrawText("TOP 5 PILOTS", (screenWidth / 2) - (topTitleWidth / 2), 150, 30, GRAY);
+
+        for (int i = 0; i < MAX_HIGH_SCORES; i++) {
+            Color rowColor = (i == 0) ? YELLOW : LIGHTGRAY;
+            const char* rank = TextFormat("%d.", i + 1);
+            const char* name = highScores[i].name;
+            const char* pts = TextFormat("%05i", highScores[i].score);
+
+            DrawText(rank, (screenWidth / 2) - 120, 210 + (i * 35), 20, rowColor);
+            DrawText(name, (screenWidth / 2) - 60, 210 + (i * 35), 20, rowColor);
+            DrawText(pts, (screenWidth / 2) + 40, 210 + (i * 35), 20, rowColor);
+        }
+
         int restartWidth = MeasureText("PRESS ENTER TO RETURN TO MENU", 20);
-        DrawText("PRESS ENTER TO RETURN TO MENU", (screenWidth / 2) - (restartWidth / 2), screenHeight / 2 + 30, 20, GRAY);
+        DrawText("PRESS ENTER TO RETURN TO MENU", (screenWidth / 2) - (restartWidth / 2), screenHeight - 80, 20, GRAY);
     } break;
     }
 
