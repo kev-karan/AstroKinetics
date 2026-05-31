@@ -14,12 +14,18 @@
 #define NUM_LAYERS 3
 #define STARS_PER_LAYER 100
 #define MAX_PARTICLES 200
+#define MAX_HIGH_SCORES 5
 
 // --- TELA ---
 static const int screenWidth = 800;
 static const int screenHeight = 600;
 
 // --- ESTRUTURAS ---
+typedef struct {
+    char name[4];
+    int score;
+} HighScoreEntry;
+
 typedef struct {
     Vector2 position;
     Vector2 velocity;
@@ -91,7 +97,10 @@ typedef struct {
 typedef enum GameScreen { SPLASH,
     MENU,
     GAMEPLAY,
-    ENDING } GameScreen;
+    NAME_ENTRY,
+    TOP_SCORES,
+    ENDING
+} GameScreen;
 
 // --- logic.c ---
 void UpdatePlayer(Player* ship);
@@ -105,11 +114,11 @@ void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], float hyper
 void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufos, Boss* boss, GameSounds* fx, float* hyperspaceTimer, bool* isTransitioning);
 
 // --- graphics.c ---
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer, Particle* particles, float hyperspaceTimer);
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int score, HighScoreEntry* highScores, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer, Particle* particles, float hyperspaceTimer, char* nameInput, int letterIndex, int frameCounter, int newScoreIndex);
 
 // --- utils.c ---
 void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, int* level, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Particle* particles);
-int LoadHighScore(void);
-void SaveHighScore(int score);
+void LoadHighScores(HighScoreEntry* scores);
+void SaveHighScores(HighScoreEntry* scores);
 
 #endif

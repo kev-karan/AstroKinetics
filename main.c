@@ -32,12 +32,20 @@ int main(void)
     Boss boss = { 0 };
 
     Particle particles[MAX_PARTICLES] = { 0 };
+
+    HighScoreEntry highScores[MAX_HIGH_SCORES] = { 0 };
+    LoadHighScores(highScores);
+
+    int newScoreIndex = -1;
+    char nameInput[4] = "AAA";
+    int letterIndex = 0;
+    int frameCounter = 0;
+
     float hyperspaceTimer = 0.0f;
 
     bool isTransitioning = false;
 
     int score = 0;
-    int highScore = LoadHighScore();
     float shootCooldown = 0.0f;
     int level = 1;
 
@@ -57,6 +65,8 @@ int main(void)
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
+        frameCounter++;
+
         UpdateMusicStream(bgmMenu);
         UpdateMusicStream(bgmGame);
 
@@ -68,7 +78,7 @@ int main(void)
 
         UpdateStarfield(starfield, hyperspaceTimer);
 
-        if (currentScreen == GAMEPLAY || currentScreen == ENDING) {
+        if (currentScreen == GAMEPLAY || currentScreen == ENDING || currentScreen == NAME_ENTRY || currentScreen == TOP_SCORES) {
             UpdateAsteroids(asteroids);
             UpdateParticles(particles);
         }
@@ -150,14 +160,18 @@ int main(void)
                 bulletsHead = NULL;
 
                 if (ship.lives <= 0) {
-                    currentScreen = ENDING;
-                    for (int e = 0; e < MAX_UFOS; e++) {
-                        ufos[e].active = false;
+                    newScoreIndex = -1;
+                    for (int i = 0; i < MAX_HIGH_SCORES; i++) {
+                        if (score > highScores[i].score) {
+                            newScoreIndex = i;
+                            break;
+                        }
                     }
 
-                    if (score > highScore) {
-                        highScore = score;
-                        SaveHighScore(highScore);
+                    currentScreen = ENDING;
+
+                    for (int e = 0; e < MAX_UFOS; e++) {
+                        ufos[e].active = false;
                     }
 
                     StopMusicStream(bgmGame);
@@ -177,6 +191,69 @@ int main(void)
 
             if (IsKeyPressed(KEY_ENTER)) {
                 PlaySound(fx.select);
+
+                if (newScoreIndex != -1) {
+                    currentScreen = NAME_ENTRY;
+                    nameInput[0] = 'A';
+                    nameInput[1] = 'A';
+                    nameInput[2] = 'A';
+                    nameInput[3] = '\0';
+                    letterIndex = 0;
+                } else {
+                    currentScreen = TOP_SCORES;
+                }
+            }
+            break;
+
+        case NAME_ENTRY:
+            UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, true, &fx);
+            UpdateBoss(&boss, &ship, &bulletsHead, true, &fx);
+            UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, true, &fx, particles);
+
+            if (IsKeyPressed(KEY_UP)) {
+                nameInput[letterIndex]--;
+                if (nameInput[letterIndex] < 'A')
+                    nameInput[letterIndex] = 'Z';
+                PlaySound(fx.select);
+            } else if (IsKeyPressed(KEY_DOWN)) {
+                nameInput[letterIndex]++;
+                if (nameInput[letterIndex] > 'Z')
+                    nameInput[letterIndex] = 'A';
+                PlaySound(fx.select);
+            } else if (IsKeyPressed(KEY_RIGHT)) {
+                if (letterIndex < 2) {
+                    letterIndex++;
+                    PlaySound(fx.select);
+                }
+            } else if (IsKeyPressed(KEY_LEFT)) {
+                if (letterIndex > 0) {
+                    letterIndex--;
+                    PlaySound(fx.select);
+                }
+            } else if (IsKeyPressed(KEY_ENTER)) {
+                PlaySound(fx.select);
+                if (letterIndex < 2) {
+                    letterIndex++;
+                } else {
+                    for (int i = MAX_HIGH_SCORES - 1; i > newScoreIndex; i--) {
+                        highScores[i] = highScores[i - 1];
+                    }
+                    highScores[newScoreIndex].score = score;
+                    sprintf(highScores[newScoreIndex].name, "%s", nameInput);
+
+                    SaveHighScores(highScores);
+                    currentScreen = TOP_SCORES;
+                }
+            }
+            break;
+
+        case TOP_SCORES:
+            UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, true, &fx);
+            UpdateBoss(&boss, &ship, &bulletsHead, true, &fx);
+            UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, true, &fx, particles);
+
+            if (IsKeyPressed(KEY_ENTER)) {
+                PlaySound(fx.select);
                 ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield, particles);
                 isTransitioning = false;
                 currentScreen = MENU;
@@ -184,7 +261,7 @@ int main(void)
             break;
         }
 
-        DrawGame(&ship, bulletsHead, asteroids, ufos, &boss, score, highScore, level, currentScreen, starfield, logoTexture, splashTimer, particles, hyperspaceTimer);
+        DrawGame(&ship, bulletsHead, asteroids, ufos, &boss, score, highScores, level, currentScreen, starfield, logoTexture, splashTimer, particles, hyperspaceTimer, nameInput, letterIndex, frameCounter, newScoreIndex);
     }
 
     UnloadTexture(logoTexture);

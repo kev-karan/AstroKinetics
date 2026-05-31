@@ -1,21 +1,37 @@
 #include "game.h"
 
-int LoadHighScore(void)
+void LoadHighScores(HighScoreEntry* scores)
 {
-    FILE* file = fopen("topscore.txt", "r");
-    int hs = 0;
+    FILE* file = fopen("topscores.txt", "r");
+    bool loaded = false;
+
     if (file != NULL) {
-        fscanf(file, "%d", &hs);
+        int count = 0;
+        for (int i = 0; i < MAX_HIGH_SCORES; i++) {
+            if (fscanf(file, "%3s %d", scores[i].name, &scores[i].score) == 2) {
+                count++;
+            }
+        }
         fclose(file);
+        if (count == MAX_HIGH_SCORES)
+            loaded = true;
     }
-    return hs;
+
+    if (!loaded) {
+        for (int i = 0; i < MAX_HIGH_SCORES; i++) {
+            sprintf(scores[i].name, "CPU");
+            scores[i].score = (MAX_HIGH_SCORES - i) * 1000;
+        }
+    }
 }
 
-void SaveHighScore(int score)
+void SaveHighScores(HighScoreEntry* scores)
 {
-    FILE* file = fopen("topscore.txt", "w");
+    FILE* file = fopen("topscores.txt", "w");
     if (file != NULL) {
-        fprintf(file, "%d", score);
+        for (int i = 0; i < MAX_HIGH_SCORES; i++) {
+            fprintf(file, "%s %d\n", scores[i].name, scores[i].score);
+        }
         fclose(file);
     }
 }
