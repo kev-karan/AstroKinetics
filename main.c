@@ -39,6 +39,13 @@ int main(void)
 
     ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
 
+    for (int i = 0; i < NUM_LAYERS; i++) {
+        for (int j = 0; j < STARS_PER_LAYER; j++) {
+            starfield[i][j].x = GetRandomValue(0, screenWidth);
+            starfield[i][j].y = GetRandomValue(0, screenHeight);
+        }
+    }
+
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {

@@ -68,12 +68,14 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* u
         asteroids[i].velocity.y = GetRandomValue(-200, 200) / 100.0f;
     }
 
+    /*
     for (int i = 0; i < NUM_LAYERS; i++) {
         for (int j = 0; j < STARS_PER_LAYER; j++) {
             starfield[i][j].x = GetRandomValue(0, screenWidth);
             starfield[i][j].y = GetRandomValue(0, screenHeight);
         }
     }
+    */
 
     *score = 0;
     *level = 1;
