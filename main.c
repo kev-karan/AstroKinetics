@@ -8,8 +8,10 @@ int main(void)
 
     Texture2D logoTexture = LoadTexture("BolaFora-white.png");
 
-    Music bgm = LoadMusicStream("IswearIsawit.ogg");
-    PlayMusicStream(bgm);
+    Music bgmMenu = LoadMusicStream("IswearIsawit.ogg");
+    Music bgmGame = LoadMusicStream("DST-TowerDefenseTheme.mp3");
+
+    PlayMusicStream(bgmMenu);
 
     GameSounds fx = { 0 };
     fx.shoot = LoadSound("shoot.wav");
@@ -49,7 +51,8 @@ int main(void)
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
-        UpdateMusicStream(bgm);
+        UpdateMusicStream(bgmMenu);
+        UpdateMusicStream(bgmGame);
 
         UpdateStarfield(starfield);
 
@@ -73,6 +76,9 @@ int main(void)
                 PlaySound(fx.select);
                 ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
                 currentScreen = GAMEPLAY;
+
+                StopMusicStream(bgmMenu);
+                PlayMusicStream(bgmGame);
             }
             break;
 
@@ -133,6 +139,9 @@ int main(void)
                         highScore = score;
                         SaveHighScore(highScore);
                     }
+
+                    StopMusicStream(bgmGame);
+                    PlayMusicStream(bgmMenu);
                 } else {
                     ship.position = (Vector2) { screenWidth / 2.0f, screenHeight / 2.0f };
                     ship.velocity = (Vector2) { 0, 0 };
@@ -159,7 +168,8 @@ int main(void)
 
     UnloadTexture(logoTexture);
 
-    UnloadMusicStream(bgm);
+    UnloadMusicStream(bgmMenu);
+    UnloadMusicStream(bgmGame);
     UnloadSound(fx.shoot);
     UnloadSound(fx.explosion);
     UnloadSound(fx.enemyShoot);
