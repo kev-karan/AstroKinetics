@@ -20,7 +20,7 @@ void SaveHighScore(int score)
     }
 }
 
-void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, int* level, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
+void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, int* level, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Particle* particles)
 {
     ship->position = (Vector2) { screenWidth / 2.0f, screenHeight / 2.0f };
     ship->velocity = (Vector2) { 0, 0 };
@@ -42,6 +42,10 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* u
         ufos[e].active = false;
     }
 
+    for (int p = 0; p < MAX_PARTICLES; p++) {
+        particles[p].active = false;
+    }
+
     boss->active = false;
     boss->introTimer = 0.0f;
     boss->bounceCount = 0;
@@ -55,6 +59,9 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* u
         asteroids[i].active = true;
         asteroids[i].radius = 40.0f;
 
+        asteroids[i].rotation = GetRandomValue(0, 360);
+        asteroids[i].rotationSpeed = GetRandomValue(-200, 200) / 100.0f;
+
         for (int v = 0; v < ASTEROID_VERTICES; v++) {
             asteroids[i].vertexOffsets[v] = GetRandomValue(80, 120) / 100.0f;
         }
@@ -67,15 +74,6 @@ void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* u
         asteroids[i].velocity.x = GetRandomValue(-200, 200) / 100.0f;
         asteroids[i].velocity.y = GetRandomValue(-200, 200) / 100.0f;
     }
-
-    /*
-    for (int i = 0; i < NUM_LAYERS; i++) {
-        for (int j = 0; j < STARS_PER_LAYER; j++) {
-            starfield[i][j].x = GetRandomValue(0, screenWidth);
-            starfield[i][j].y = GetRandomValue(0, screenHeight);
-        }
-    }
-    */
 
     *score = 0;
     *level = 1;

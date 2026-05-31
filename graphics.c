@@ -1,9 +1,14 @@
 #include "game.h"
 
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer)
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer, Particle* particles, float hyperspaceTimer)
 {
     BeginDrawing();
     ClearBackground(BLACK);
+
+    float warpFactor = 0.0f;
+    if (hyperspaceTimer > 0.0f) {
+        warpFactor = sinf((hyperspaceTimer / 3.0f) * PI);
+    }
 
     for (int i = 0; i < NUM_LAYERS; i++) {
         Color starColor;
@@ -15,7 +20,12 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
             starColor = LIGHTGRAY;
 
         for (int j = 0; j < STARS_PER_LAYER; j++) {
-            DrawPixelV(starfield[i][j], starColor);
+            if (warpFactor > 0.01f) {
+                float length = (i + 1) * 20.0f * warpFactor;
+                DrawLineV(starfield[i][j], (Vector2) { starfield[i][j].x, starfield[i][j].y - length }, starColor);
+            } else {
+                DrawPixelV(starfield[i][j], starColor);
+            }
         }
     }
 
@@ -23,8 +33,8 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
         for (int i = 0; i < MAX_ASTEROIDS; i++) {
             if (asteroids[i].active) {
                 for (int j = 0; j < ASTEROID_VERTICES; j++) {
-                    float angle1 = (j * 360.0f / ASTEROID_VERTICES) * DEG2RAD;
-                    float angle2 = (((j + 1) % ASTEROID_VERTICES) * 360.0f / ASTEROID_VERTICES) * DEG2RAD;
+                    float angle1 = (asteroids[i].rotation + j * 360.0f / ASTEROID_VERTICES) * DEG2RAD;
+                    float angle2 = (asteroids[i].rotation + ((j + 1) % ASTEROID_VERTICES) * 360.0f / ASTEROID_VERTICES) * DEG2RAD;
 
                     float r1 = asteroids[i].radius * asteroids[i].vertexOffsets[j];
                     float r2 = asteroids[i].radius * asteroids[i].vertexOffsets[(j + 1) % ASTEROID_VERTICES];
@@ -34,6 +44,18 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
 
                     DrawLineV(p1, p2, RAYWHITE);
                 }
+            }
+        }
+
+        for (int i = 0; i < MAX_PARTICLES; i++) {
+            if (particles[i].active) {
+                float alpha = particles[i].lifeTime;
+                if (alpha > 1.0f)
+                    alpha = 1.0f;
+                if (alpha < 0.0f)
+                    alpha = 0.0f;
+
+                DrawCircleV(particles[i].position, 1.5f, Fade(particles[i].color, alpha));
             }
         }
 
