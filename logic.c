@@ -541,6 +541,10 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
             (*level)++;
             ship->lives++;
 
+            if (ship->lives > 9) {
+                ship->lives = 9;
+            }
+
             if (*level % 5 == 0) {
                 boss->introTimer = 3.0f;
                 boss->active = false;
