@@ -74,7 +74,7 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
 
         if (splashTimer > 3.0f) {
             alpha = 4.0f - splashTimer;
-        } else if (splashTimer < 1.0f) {
+        } else if (splashTimer < 1.5f) {
             alpha = splashTimer;
         }
 
