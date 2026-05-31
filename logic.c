@@ -469,6 +469,19 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
         if (boss->introTimer <= 0.0f) {
             boss->active = true;
 
+            if (ship->position.x < screenWidth / 2.0f) {
+                boss->position.x = screenWidth - 100;
+            } else {
+                boss->position.x = 100;
+            }
+
+            boss->position.y = screenHeight / 2;
+            boss->velocity.x = 0;
+            boss->velocity.y = 3.0f;
+            boss->shootTimer = 1.0f;
+            boss->bounceCount = 0;
+            boss->isCrossing = false;
+
             int spawnCount = 2;
             for (int i = 0; i < spawnCount; i++) {
                 asteroids[i].active = true;
@@ -534,19 +547,6 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
                 boss->maxHealth = 15 + (*level);
                 boss->health = boss->maxHealth;
                 boss->radius = 50.0f;
-
-                if (ship->position.x < screenWidth / 2.0f) {
-                    boss->position.x = screenWidth - 100;
-                } else {
-                    boss->position.x = 100;
-                }
-
-                boss->position.y = screenHeight / 2;
-                boss->velocity.x = 0;
-                boss->velocity.y = 3.0f;
-                boss->shootTimer = 1.0f;
-                boss->bounceCount = 0;
-                boss->isCrossing = false;
 
             } else {
                 if (*level >= 3) {
