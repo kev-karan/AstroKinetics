@@ -78,7 +78,10 @@ int main(void)
             splashTimer -= GetFrameTime();
 
             if (splashTimer <= 0.0f || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
-                PlaySound(fx.select);
+                if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+                    PlaySound(fx.select);
+                }
+
                 ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield, particles);
                 isTransitioning = false;
                 currentScreen = MENU;
