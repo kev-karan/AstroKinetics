@@ -4,7 +4,22 @@ int main(void)
 {
     InitWindow(screenWidth, screenHeight, "AstroKinetics");
 
+    InitAudioDevice();
+
     Texture2D logoTexture = LoadTexture("BolaFora-white.png");
+
+    Music bgm = LoadMusicStream("IswearIsawit.ogg");
+    PlayMusicStream(bgm);
+
+    GameSounds fx = { 0 };
+    fx.shoot = LoadSound("shoot.wav");
+    fx.explosion = LoadSound("explosion.wav");
+    fx.enemyShoot = LoadSound("enemy_shoot.wav");
+    fx.enemyExplosion = LoadSound("enemy_explosion.wav");
+    fx.bossHit = LoadSound("boss_hit.wav");
+    fx.playerDeath = LoadSound("player_death.wav");
+    fx.levelUp = LoadSound("level_up.wav");
+    fx.select = LoadSound("select.wav");
 
     Player ship = { 0 };
     Bullet* bulletsHead = NULL;
@@ -27,6 +42,8 @@ int main(void)
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
+        UpdateMusicStream(bgm);
+
         UpdateStarfield(starfield);
 
         if (currentScreen == GAMEPLAY || currentScreen == ENDING) {
@@ -37,7 +54,7 @@ int main(void)
             splashTimer -= GetFrameTime();
 
             if (splashTimer <= 0.0f || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
-
+                PlaySound(fx.select);
                 ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
                 currentScreen = MENU;
             }
@@ -45,6 +62,7 @@ int main(void)
             switch (currentScreen) {
             case MENU:
                 if (IsKeyPressed(KEY_ENTER)) {
+                    PlaySound(fx.select);
                     ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
                     currentScreen = GAMEPLAY;
                 }
@@ -52,10 +70,10 @@ int main(void)
 
             case GAMEPLAY:
                 UpdatePlayer(&ship);
-                UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, false);
-                UpdateBoss(&boss, &ship, &bulletsHead, false);
-                UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, false);
-                CheckLevelClear(asteroids, &level, &ship, &bulletsHead, ufos, &boss);
+                UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, false, &fx);
+                UpdateBoss(&boss, &ship, &bulletsHead, false, &fx);
+                UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, false, &fx);
+                CheckLevelClear(asteroids, &level, &ship, &bulletsHead, ufos, &boss, &fx);
 
                 bool playerHit = false;
 
@@ -87,9 +105,21 @@ int main(void)
 
                 if (playerHit) {
                     ship.lives--;
+                    PlaySound(fx.playerDeath);
+
+                    Bullet* cbToFree = bulletsHead;
+                    while (cbToFree != NULL) {
+                        Bullet* next = cbToFree->next;
+                        free(cbToFree);
+                        cbToFree = next;
+                    }
+                    bulletsHead = NULL;
 
                     if (ship.lives <= 0) {
                         currentScreen = ENDING;
+                        for (int e = 0; e < MAX_UFOS; e++) {
+                            ufos[e].active = false;
+                        }
 
                         if (score > highScore) {
                             highScore = score;
@@ -104,11 +134,12 @@ int main(void)
                 break;
 
             case ENDING:
-                UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, true);
-                UpdateBoss(&boss, &ship, &bulletsHead, true);
-                UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, true);
+                UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, true, &fx);
+                UpdateBoss(&boss, &ship, &bulletsHead, true, &fx);
+                UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, true, &fx);
 
                 if (IsKeyPressed(KEY_ENTER)) {
+                    PlaySound(fx.select);
                     ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
                     currentScreen = MENU;
                 }
@@ -120,6 +151,17 @@ int main(void)
     }
 
     UnloadTexture(logoTexture);
+
+    UnloadMusicStream(bgm);
+    UnloadSound(fx.shoot);
+    UnloadSound(fx.explosion);
+    UnloadSound(fx.enemyShoot);
+    UnloadSound(fx.enemyExplosion);
+    UnloadSound(fx.bossHit);
+    UnloadSound(fx.playerDeath);
+    UnloadSound(fx.levelUp);
+    UnloadSound(fx.select);
+    CloseAudioDevice();
 
     Bullet* currentBullet = bulletsHead;
     while (currentBullet != NULL) {

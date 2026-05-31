@@ -66,6 +66,17 @@ typedef struct {
     bool isCrossing;
 } Boss;
 
+typedef struct {
+    Sound shoot;
+    Sound explosion;
+    Sound enemyShoot;
+    Sound enemyExplosion;
+    Sound bossHit;
+    Sound playerDeath;
+    Sound levelUp;
+    Sound select;
+} GameSounds;
+
 typedef enum GameScreen { SPLASH,
     MENU,
     GAMEPLAY,
@@ -73,12 +84,12 @@ typedef enum GameScreen { SPLASH,
 
 // --- logic.c ---
 void UpdatePlayer(Player* ship);
-void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, bool isGameOver);
-void UpdateEnemy(Enemy* ufos, Player* ship, Bullet** bulletsHead, Asteroid* asteroids, bool isGameOver);
-void UpdateBoss(Boss* boss, Player* ship, Bullet** bulletsHead, bool isGameOver);
+void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, bool isGameOver, GameSounds* fx);
+void UpdateEnemy(Enemy* ufos, Player* ship, Bullet** bulletsHead, Asteroid* asteroids, bool isGameOver, GameSounds* fx);
+void UpdateBoss(Boss* boss, Player* ship, Bullet** bulletsHead, bool isGameOver, GameSounds* fx);
 void UpdateAsteroids(Asteroid* asteroids);
 void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
-void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufos, Boss* boss);
+void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufos, Boss* boss, GameSounds* fx);
 
 // --- graphics.c ---
 void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer);
