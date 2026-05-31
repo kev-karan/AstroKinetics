@@ -1,6 +1,6 @@
 #include "game.h"
 
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int score, HighScoreEntry* highScores, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer, Particle* particles, float hyperspaceTimer, char* nameInput, int letterIndex, int frameCounter, int newScoreIndex)
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int score, HighScoreEntry* highScores, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer, Particle* particles, float hyperspaceTimer, char* nameInput, int letterIndex, int frameCounter, int newScoreIndex, bool isPaused)
 {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -179,6 +179,16 @@ void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufo
             int countWidth = MeasureText(TextFormat("%i", secondsLeft), 50);
             DrawText(TextFormat("%i", secondsLeft), screenWidth / 2 - countWidth / 2, screenHeight / 2 + 10, 50, RAYWHITE);
         }
+
+        if (isPaused) {
+            DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.6f));
+
+            if ((frameCounter / 30) % 2 == 0) {
+                int pauseWidth = MeasureText("PAUSED", 20);
+                DrawText("PAUSED", (screenWidth / 2) - (pauseWidth / 2), screenHeight / 2, 20, LIGHTGRAY);
+            }
+        }
+
     } break;
 
     case ENDING: {
