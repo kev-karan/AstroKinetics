@@ -143,15 +143,28 @@ void UpdateEnemy(Enemy* ufos, Player* ship, Bullet** bulletsHead, Asteroid* aste
 
         for (int i = 0; i < MAX_ASTEROIDS; i++) {
             if (asteroids[i].active) {
-                if (CheckCollisionCircles(ufos[e].position, ufos[e].radius, asteroids[i].position, asteroids[i].radius)) {
-                    ufos[e].active = false;
-                    break;
+                float dx = ufos[e].position.x - asteroids[i].position.x;
+                float dy = ufos[e].position.y - asteroids[i].position.y;
+                float distance = sqrtf(dx * dx + dy * dy);
+
+                if (distance == 0.0f) {
+                    dx = 0.1f;
+                    distance = 0.1f;
+                }
+
+                float sumRadii = ufos[e].radius + asteroids[i].radius;
+
+                if (distance < sumRadii) {
+                    float overlap = sumRadii - distance;
+                    float nx = dx / distance;
+                    float ny = dy / distance;
+
+                    ufos[e].position.x += nx * overlap;
+                    ufos[e].position.y += ny * overlap;
                 }
             }
         }
-
-        if (!ufos[e].active)
-            continue;
+        // -----------------------------------------
 
         if (!isGameOver) {
             ufos[e].shootTimer -= GetFrameTime();
