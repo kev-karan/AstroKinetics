@@ -1,5 +1,39 @@
 #include "game.h"
 
+void SpawnParticles(Particle* particles, Vector2 position, int count, Color color)
+{
+    int spawned = 0;
+    for (int i = 0; i < MAX_PARTICLES && spawned < count; i++) {
+        if (!particles[i].active) {
+            particles[i].active = true;
+            particles[i].position = position;
+
+            float angle = GetRandomValue(0, 360) * DEG2RAD;
+            float speed = GetRandomValue(100, 400) / 100.0f;
+
+            particles[i].velocity.x = cosf(angle) * speed;
+            particles[i].velocity.y = sinf(angle) * speed;
+            particles[i].color = color;
+            particles[i].lifeTime = GetRandomValue(40, 100) / 100.0f;
+            spawned++;
+        }
+    }
+}
+
+void UpdateParticles(Particle* particles)
+{
+    for (int i = 0; i < MAX_PARTICLES; i++) {
+        if (particles[i].active) {
+            particles[i].position.x += particles[i].velocity.x;
+            particles[i].position.y += particles[i].velocity.y;
+            particles[i].lifeTime -= GetFrameTime();
+            if (particles[i].lifeTime <= 0.0f) {
+                particles[i].active = false;
+            }
+        }
+    }
+}
+
 void UpdatePlayer(Player* ship)
 {
     if (ship->invulnerableTimer > 0.0f) {
@@ -193,7 +227,7 @@ void UpdateEnemy(Enemy* ufos, Player* ship, Bullet** bulletsHead, Asteroid* aste
     }
 }
 
-void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, bool isGameOver, GameSounds* fx)
+void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, bool isGameOver, GameSounds* fx, Particle* particles)
 {
     float baseAngle = ship->rotation - 90.0f;
 
@@ -243,10 +277,13 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                 boss->health--;
                 *score += 20;
 
+                SpawnParticles(particles, currentBullet->position, 5, PURPLE);
+
                 if (boss->health <= 0) {
                     boss->active = false;
                     *score += 2000;
                     PlaySound(fx->enemyExplosion);
+                    SpawnParticles(particles, boss->position, 50, MAGENTA);
                 } else {
                     PlaySound(fx->bossHit);
                 }
@@ -259,6 +296,7 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                         ufos[e].active = false;
                         *score += 500;
                         PlaySound(fx->enemyExplosion);
+                        SpawnParticles(particles, ufos[e].position, 25, RED);
                         break;
                     }
                 }
@@ -274,6 +312,7 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                         if (!currentBullet->isEnemy) {
                             asteroids[i].active = false;
                             PlaySound(fx->explosion);
+                            SpawnParticles(particles, asteroids[i].position, 15, RAYWHITE);
 
                             if (asteroids[i].radius >= 40.0f)
                                 *score += 50;
@@ -291,6 +330,9 @@ void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Ast
                                         asteroids[j].position.x = asteroids[i].position.x + offset;
                                         asteroids[j].position.y = asteroids[i].position.y + offset;
                                         asteroids[j].radius = newRadius;
+                                        asteroids[j].rotation = GetRandomValue(0, 360);
+                                        asteroids[j].rotationSpeed = GetRandomValue(-300, 300) / 100.0f;
+
                                         for (int v = 0; v < ASTEROID_VERTICES; v++) {
                                             asteroids[j].vertexOffsets[v] = GetRandomValue(80, 120) / 100.0f;
                                         }
@@ -381,6 +423,7 @@ void UpdateAsteroids(Asteroid* asteroids)
         if (asteroids[i].active) {
             asteroids[i].position.x += asteroids[i].velocity.x;
             asteroids[i].position.y += asteroids[i].velocity.y;
+            asteroids[i].rotation += asteroids[i].rotationSpeed;
 
             if (asteroids[i].position.x > screenWidth + asteroids[i].radius)
                 asteroids[i].position.x = -asteroids[i].radius;
@@ -395,10 +438,17 @@ void UpdateAsteroids(Asteroid* asteroids)
     }
 }
 
-void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
+void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], float hyperspaceTimer)
 {
+    float warpFactor = 0.0f;
+    if (hyperspaceTimer > 0.0f) {
+        warpFactor = sinf((hyperspaceTimer / 3.0f) * PI);
+    }
+
+    float speedMult = 1.0f + (warpFactor * 25.0f);
+
     for (int i = 0; i < NUM_LAYERS; i++) {
-        float speed = (i + 1) * 0.15f;
+        float speed = (i + 1) * 0.15f * speedMult;
 
         for (int j = 0; j < STARS_PER_LAYER; j++) {
             starfield[i][j].y += speed;
@@ -411,7 +461,7 @@ void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER])
     }
 }
 
-void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufos, Boss* boss, GameSounds* fx)
+void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufos, Boss* boss, GameSounds* fx, float* hyperspaceTimer, bool* isTransitioning)
 {
     if (boss->introTimer > 0.0f) {
         boss->introTimer -= GetFrameTime();
@@ -423,6 +473,8 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
             for (int i = 0; i < spawnCount; i++) {
                 asteroids[i].active = true;
                 asteroids[i].radius = 40.0f;
+                asteroids[i].rotation = GetRandomValue(0, 360);
+                asteroids[i].rotationSpeed = GetRandomValue(-200, 200) / 100.0f;
 
                 for (int v = 0; v < ASTEROID_VERTICES; v++) {
                     asteroids[i].vertexOffsets[v] = GetRandomValue(80, 120) / 100.0f;
@@ -452,9 +504,9 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
     if (boss->active)
         allDestroyed = false;
 
-    if (allDestroyed) {
-        (*level)++;
-        ship->lives++;
+    if (allDestroyed && !(*isTransitioning)) {
+        *isTransitioning = true;
+        *hyperspaceTimer = 3.0f;
         PlaySound(fx->levelUp);
 
         Bullet* currentBullet = *bulletsHead;
@@ -468,74 +520,83 @@ void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bul
         for (int e = 0; e < MAX_UFOS; e++) {
             ufos[e].active = false;
         }
+    }
 
-        if (*level % 5 == 0) {
-            boss->introTimer = 3.0f;
-            boss->active = false;
+    if (*isTransitioning) {
+        if (*hyperspaceTimer <= 0.0f) {
+            *isTransitioning = false;
+            (*level)++;
+            ship->lives++;
 
-            boss->maxHealth = 15 + (*level);
-            boss->health = boss->maxHealth;
-            boss->radius = 50.0f;
+            if (*level % 5 == 0) {
+                boss->introTimer = 3.0f;
+                boss->active = false;
+                boss->maxHealth = 15 + (*level);
+                boss->health = boss->maxHealth;
+                boss->radius = 50.0f;
 
-            if (ship->position.x < screenWidth / 2.0f) {
-                boss->position.x = screenWidth - 100;
+                if (ship->position.x < screenWidth / 2.0f) {
+                    boss->position.x = screenWidth - 100;
+                } else {
+                    boss->position.x = 100;
+                }
+
+                boss->position.y = screenHeight / 2;
+                boss->velocity.x = 0;
+                boss->velocity.y = 3.0f;
+                boss->shootTimer = 1.0f;
+                boss->bounceCount = 0;
+                boss->isCrossing = false;
+
             } else {
-                boss->position.x = 100;
-            }
+                if (*level >= 3) {
+                    int targetUfos = 1 + (*level - 3) / 3;
+                    if (targetUfos > MAX_UFOS)
+                        targetUfos = MAX_UFOS;
 
-            boss->position.y = screenHeight / 2;
-            boss->velocity.x = 0;
-            boss->velocity.y = 3.0f;
-            boss->shootTimer = 1.0f;
-            boss->bounceCount = 0;
-            boss->isCrossing = false;
+                    for (int e = 0; e < targetUfos; e++) {
+                        ufos[e].active = true;
+                        ufos[e].radius = 20.0f;
 
-        } else {
-            if (*level >= 3) {
-                int targetUfos = 1 + (*level - 3) / 3;
-                if (targetUfos > MAX_UFOS)
-                    targetUfos = MAX_UFOS;
+                        if (e % 2 == 0) {
+                            ufos[e].position.x = 0;
+                            ufos[e].velocity.x = 2.0f;
+                        } else {
+                            ufos[e].position.x = screenWidth;
+                            ufos[e].velocity.x = -2.0f;
+                        }
 
-                for (int e = 0; e < targetUfos; e++) {
-                    ufos[e].active = true;
-                    ufos[e].radius = 20.0f;
+                        ufos[e].position.y = GetRandomValue(100, screenHeight - 100);
+                        ufos[e].velocity.y = GetRandomValue(-100, 100) / 100.0f;
 
-                    if (e % 2 == 0) {
-                        ufos[e].position.x = 0;
-                        ufos[e].velocity.x = 2.0f;
-                    } else {
-                        ufos[e].position.x = screenWidth;
-                        ufos[e].velocity.x = -2.0f;
+                        ufos[e].shootTimer = 2.0f + (e * 0.5f);
+                    }
+                }
+
+                int spawnCount = (*level) + 2;
+
+                if (spawnCount > MAX_ASTEROIDS / 2)
+                    spawnCount = MAX_ASTEROIDS / 2;
+
+                for (int i = 0; i < spawnCount; i++) {
+                    asteroids[i].active = true;
+                    asteroids[i].radius = 40.0f;
+                    asteroids[i].rotation = GetRandomValue(0, 360);
+                    asteroids[i].rotationSpeed = GetRandomValue(-200, 200) / 100.0f;
+
+                    for (int v = 0; v < ASTEROID_VERTICES; v++) {
+                        asteroids[i].vertexOffsets[v] = GetRandomValue(80, 120) / 100.0f;
                     }
 
-                    ufos[e].position.y = GetRandomValue(100, screenHeight - 100);
-                    ufos[e].velocity.y = GetRandomValue(-100, 100) / 100.0f;
+                    do {
+                        asteroids[i].position.x = GetRandomValue(0, screenWidth);
+                        asteroids[i].position.y = GetRandomValue(0, screenHeight);
+                    } while (CheckCollisionCircles(asteroids[i].position, 40.0f, ship->position, 150.0f));
 
-                    ufos[e].shootTimer = 2.0f + (e * 0.5f);
+                    int speedBoost = (*level) * 20;
+                    asteroids[i].velocity.x = GetRandomValue(-200 - speedBoost, 200 + speedBoost) / 100.0f;
+                    asteroids[i].velocity.y = GetRandomValue(-200 - speedBoost, 200 + speedBoost) / 100.0f;
                 }
-            }
-
-            int spawnCount = (*level) + 2;
-
-            if (spawnCount > MAX_ASTEROIDS / 2)
-                spawnCount = MAX_ASTEROIDS / 2;
-
-            for (int i = 0; i < spawnCount; i++) {
-                asteroids[i].active = true;
-                asteroids[i].radius = 40.0f;
-
-                for (int v = 0; v < ASTEROID_VERTICES; v++) {
-                    asteroids[i].vertexOffsets[v] = GetRandomValue(80, 120) / 100.0f;
-                }
-
-                do {
-                    asteroids[i].position.x = GetRandomValue(0, screenWidth);
-                    asteroids[i].position.y = GetRandomValue(0, screenHeight);
-                } while (CheckCollisionCircles(asteroids[i].position, 40.0f, ship->position, 150.0f));
-
-                int speedBoost = (*level) * 20;
-                asteroids[i].velocity.x = GetRandomValue(-200 - speedBoost, 200 + speedBoost) / 100.0f;
-                asteroids[i].velocity.y = GetRandomValue(-200 - speedBoost, 200 + speedBoost) / 100.0f;
             }
         }
     }

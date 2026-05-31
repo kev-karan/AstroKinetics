@@ -31,6 +31,11 @@ int main(void)
     Enemy ufos[MAX_UFOS] = { 0 };
     Boss boss = { 0 };
 
+    Particle particles[MAX_PARTICLES] = { 0 };
+    float hyperspaceTimer = 0.0f;
+
+    bool isTransitioning = false;
+
     int score = 0;
     int highScore = LoadHighScore();
     float shootCooldown = 0.0f;
@@ -39,7 +44,8 @@ int main(void)
     GameScreen currentScreen = SPLASH;
     float splashTimer = 4.5f;
 
-    ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
+    ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield, particles);
+    isTransitioning = false;
 
     for (int i = 0; i < NUM_LAYERS; i++) {
         for (int j = 0; j < STARS_PER_LAYER; j++) {
@@ -54,10 +60,17 @@ int main(void)
         UpdateMusicStream(bgmMenu);
         UpdateMusicStream(bgmGame);
 
-        UpdateStarfield(starfield);
+        if (hyperspaceTimer > 0.0f) {
+            hyperspaceTimer -= GetFrameTime();
+            if (hyperspaceTimer < 0.0f)
+                hyperspaceTimer = 0.0f;
+        }
+
+        UpdateStarfield(starfield, hyperspaceTimer);
 
         if (currentScreen == GAMEPLAY || currentScreen == ENDING) {
             UpdateAsteroids(asteroids);
+            UpdateParticles(particles);
         }
 
         switch (currentScreen) {
@@ -66,7 +79,8 @@ int main(void)
 
             if (splashTimer <= 0.0f || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
                 PlaySound(fx.select);
-                ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
+                ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield, particles);
+                isTransitioning = false;
                 currentScreen = MENU;
             }
             break;
@@ -74,7 +88,8 @@ int main(void)
         case MENU:
             if (IsKeyPressed(KEY_ENTER)) {
                 PlaySound(fx.select);
-                ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
+                ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield, particles);
+                isTransitioning = false;
                 currentScreen = GAMEPLAY;
 
                 StopMusicStream(bgmMenu);
@@ -86,8 +101,8 @@ int main(void)
             UpdatePlayer(&ship);
             UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, false, &fx);
             UpdateBoss(&boss, &ship, &bulletsHead, false, &fx);
-            UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, false, &fx);
-            CheckLevelClear(asteroids, &level, &ship, &bulletsHead, ufos, &boss, &fx);
+            UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, false, &fx, particles);
+            CheckLevelClear(asteroids, &level, &ship, &bulletsHead, ufos, &boss, &fx, &hyperspaceTimer, &isTransitioning);
 
             bool playerHit = false;
 
@@ -121,6 +136,8 @@ int main(void)
                 ship.lives--;
                 PlaySound(fx.playerDeath);
 
+                SpawnParticles(particles, ship.position, 50, RAYWHITE);
+
                 Bullet* cbToFree = bulletsHead;
                 while (cbToFree != NULL) {
                     Bullet* next = cbToFree->next;
@@ -153,17 +170,18 @@ int main(void)
         case ENDING:
             UpdateEnemy(ufos, &ship, &bulletsHead, asteroids, true, &fx);
             UpdateBoss(&boss, &ship, &bulletsHead, true, &fx);
-            UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, true, &fx);
+            UpdateBullets(&bulletsHead, &ship, &shootCooldown, asteroids, ufos, &boss, &score, true, &fx, particles);
 
             if (IsKeyPressed(KEY_ENTER)) {
                 PlaySound(fx.select);
-                ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield);
+                ResetGame(&ship, &bulletsHead, asteroids, ufos, &boss, &score, &level, starfield, particles);
+                isTransitioning = false;
                 currentScreen = MENU;
             }
             break;
         }
 
-        DrawGame(&ship, bulletsHead, asteroids, ufos, &boss, score, highScore, level, currentScreen, starfield, logoTexture, splashTimer);
+        DrawGame(&ship, bulletsHead, asteroids, ufos, &boss, score, highScore, level, currentScreen, starfield, logoTexture, splashTimer, particles, hyperspaceTimer);
     }
 
     UnloadTexture(logoTexture);

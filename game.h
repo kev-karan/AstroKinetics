@@ -13,6 +13,7 @@
 #define ASTEROID_VERTICES 10
 #define NUM_LAYERS 3
 #define STARS_PER_LAYER 100
+#define MAX_PARTICLES 200
 
 // --- TELA ---
 static const int screenWidth = 800;
@@ -43,6 +44,8 @@ typedef struct {
     float radius;
     bool active;
     float vertexOffsets[ASTEROID_VERTICES];
+    float rotation;
+    float rotationSpeed;
 } Asteroid;
 
 typedef struct {
@@ -67,6 +70,14 @@ typedef struct {
 } Boss;
 
 typedef struct {
+    Vector2 position;
+    Vector2 velocity;
+    Color color;
+    float lifeTime;
+    bool active;
+} Particle;
+
+typedef struct {
     Sound shoot;
     Sound explosion;
     Sound enemyShoot;
@@ -84,18 +95,20 @@ typedef enum GameScreen { SPLASH,
 
 // --- logic.c ---
 void UpdatePlayer(Player* ship);
-void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, bool isGameOver, GameSounds* fx);
+void SpawnParticles(Particle* particles, Vector2 position, int count, Color color);
+void UpdateParticles(Particle* particles);
+void UpdateBullets(Bullet** bulletsHead, Player* ship, float* shootCooldown, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, bool isGameOver, GameSounds* fx, Particle* particles);
 void UpdateEnemy(Enemy* ufos, Player* ship, Bullet** bulletsHead, Asteroid* asteroids, bool isGameOver, GameSounds* fx);
 void UpdateBoss(Boss* boss, Player* ship, Bullet** bulletsHead, bool isGameOver, GameSounds* fx);
 void UpdateAsteroids(Asteroid* asteroids);
-void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
-void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufos, Boss* boss, GameSounds* fx);
+void UpdateStarfield(Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], float hyperspaceTimer);
+void CheckLevelClear(Asteroid* asteroids, int* level, Player* ship, Bullet** bulletsHead, Enemy* ufos, Boss* boss, GameSounds* fx, float* hyperspaceTimer, bool* isTransitioning);
 
 // --- graphics.c ---
-void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer);
+void DrawGame(Player* ship, Bullet* bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int score, int highScore, int level, GameScreen currentScreen, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Texture2D logoTexture, float splashTimer, Particle* particles, float hyperspaceTimer);
 
 // --- utils.c ---
-void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, int* level, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER]);
+void ResetGame(Player* ship, Bullet** bulletsHead, Asteroid* asteroids, Enemy* ufos, Boss* boss, int* score, int* level, Vector2 starfield[NUM_LAYERS][STARS_PER_LAYER], Particle* particles);
 int LoadHighScore(void);
 void SaveHighScore(int score);
 
