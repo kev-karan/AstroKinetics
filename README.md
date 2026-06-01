@@ -26,6 +26,10 @@ Para compilar e jogar o **AstroKinetics**, precisará ter instalado no seu ambie
 - Ferramenta GNU Make.
 - Biblioteca [Raylib](https://www.raylib.com/) configurada.
 
+## Video
+
+[![Watch on YouTube](https://img.youtube.com/vi/B8rQhPUtWPo/hqdefault.jpg)](https://youtu.be/B8rQhPUtWPo)
+
 ## Como Compilar e Jogar
 O projeto inclui um `Makefile` universal multiplataforma (suporta Linux, WSL, MacOS e Windows via MinGW).
 
