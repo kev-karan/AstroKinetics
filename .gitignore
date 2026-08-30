@@ -22,6 +22,9 @@
 *.la
 *.lo
 
+# Exception: allow web library tracking despite *.a rule
+!lib_web/libraylib.web.a
+
 # Shared objects (inc. Windows DLLs)
 *.dll
 *.so
@@ -35,6 +38,12 @@
 *.i*86
 *.x86_64
 *.hex
+
+# Web compiled files (Emscripten)
+index.html
+index.js
+index.wasm
+index.data
 
 # Debug files
 *.dSYM/
