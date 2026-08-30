@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -std=c99
-SRC = main.c logic.c graphics.c utils.c
+CFLAGS = -Wall -std=c99 -I./src
+SRC = src/main.c src/logic.c src/graphics.c src/utils.c
 
 OBJ = $(SRC:.c=.o)
 
@@ -17,7 +17,7 @@ else ifeq ($(UNAME_S), Darwin)
 else
     LDFLAGS = -lraylib -lopengl32 -lgdi32 -lwinmm
     TARGET = AstroKinetics.exe
-    RUN_CMD = ./$(TARGET) 
+    RUN_CMD = ./$(TARGET)
 endif
 
 all: $(TARGET)

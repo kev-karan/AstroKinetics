@@ -6,22 +6,22 @@ int main(void)
 
     InitAudioDevice();
 
-    Texture2D logoTexture = LoadTexture("BolaFora-white.png");
+    Texture2D logoTexture = LoadTexture("assets/images/BolaFora-white.png");
 
-    Music bgmMenu = LoadMusicStream("IswearIsawit.ogg");
-    Music bgmGame = LoadMusicStream("DST-TowerDefenseTheme.mp3");
+    Music bgmMenu = LoadMusicStream("assets/audio/IswearIsawit.ogg");
+    Music bgmGame = LoadMusicStream("assets/audio/DST-TowerDefenseTheme.mp3");
 
     PlayMusicStream(bgmMenu);
 
     GameSounds fx = { 0 };
-    fx.shoot = LoadSound("shoot.wav");
-    fx.explosion = LoadSound("explosion.wav");
-    fx.enemyShoot = LoadSound("enemy_shoot.wav");
-    fx.enemyExplosion = LoadSound("enemy_explosion.wav");
-    fx.bossHit = LoadSound("boss_hit.wav");
-    fx.playerDeath = LoadSound("player_death.wav");
-    fx.levelUp = LoadSound("level_up.wav");
-    fx.select = LoadSound("select.wav");
+    fx.shoot = LoadSound("assets/audio/shoot.wav");
+    fx.explosion = LoadSound("assets/audio/explosion.wav");
+    fx.enemyShoot = LoadSound("assets/audio/enemy_shoot.wav");
+    fx.enemyExplosion = LoadSound("assets/audio/enemy_explosion.wav");
+    fx.bossHit = LoadSound("assets/audio/boss_hit.wav");
+    fx.playerDeath = LoadSound("assets/audio/player_death.wav");
+    fx.levelUp = LoadSound("assets/audio/level_up.wav");
+    fx.select = LoadSound("assets/audio/select.wav");
 
     Player ship = { 0 };
     Bullet* bulletsHead = NULL;
